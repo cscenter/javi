@@ -24,8 +24,8 @@ public class JaviParser
             CompilationUnit unit = JavaParser.parse(file);
             for (TypeDeclaration typeDeclaration : unit.getTypes()) {
                 for (BodyDeclaration bodyDeclaration : typeDeclaration.getMembers()) {
-                    MethodDeclaration methodDeclaration = (MethodDeclaration) bodyDeclaration;
-                    if (methodDeclaration != null) {
+                    if (bodyDeclaration instanceof MethodDeclaration) {
+                        MethodDeclaration methodDeclaration = (MethodDeclaration) bodyDeclaration;
                         mMethodHashMap.put(methodDeclaration.getName(), methodDeclaration);
                     }
                 }
