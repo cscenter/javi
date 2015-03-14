@@ -34,7 +34,8 @@ public class JaviFrame extends JFrame {
                 int returnVal = openFile.showOpenDialog(null);
                 if (returnVal == JFileChooser.APPROVE_OPTION) {
                     File file = openFile.getSelectedFile();
-                    mJaviSplitPane.setListData(JaviParser.methodsByFile(file));
+                    JaviParser parser = new JaviParser(file);
+                    mJaviSplitPane.setListData(parser);
                 }
             }
         });

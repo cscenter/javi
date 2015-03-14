@@ -8,23 +8,25 @@ import com.github.antlrjavaparser.api.body.TypeDeclaration;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Created by Anastasiia Kuzenkova on 10.03.15.
  */
 public class JaviParser
 {
-    public static ArrayList<String> methodsByFile(File file)
+    private HashMap<String, MethodDeclaration> mMethodHashMap;
+
+    public JaviParser(File file)
     {
-        ArrayList<String> result = new ArrayList<>();
+        mMethodHashMap = new HashMap<>();
         try {
             CompilationUnit unit = JavaParser.parse(file);
             for (TypeDeclaration typeDeclaration : unit.getTypes()) {
                 for (BodyDeclaration bodyDeclaration : typeDeclaration.getMembers()) {
                     MethodDeclaration methodDeclaration = (MethodDeclaration) bodyDeclaration;
                     if (methodDeclaration != null) {
-                        result.add(methodDeclaration.getName());
+                        mMethodHashMap.put(methodDeclaration.getName(), methodDeclaration);
                     }
                 }
             }
@@ -32,6 +34,15 @@ public class JaviParser
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return result;
+    }
+
+    public String[] methodNames()
+    {
+        return mMethodHashMap.keySet().toArray(new String[mMethodHashMap.keySet().size()]);
+    }
+
+    public String getMethodBodyByName(String methodName)
+    {
+        return mMethodHashMap.get(methodName).toString();
     }
 }

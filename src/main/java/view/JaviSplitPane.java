@@ -1,10 +1,11 @@
 package view;
 
+import model.JaviParser;
+
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
-import java.util.ArrayList;
 
 /**
  * Created by Anastasiia Kuzenkova on 10.03.15.
@@ -14,6 +15,7 @@ public class JaviSplitPane extends JPanel implements ListSelectionListener
     private JList mMethodsList;
     private JSplitPane mSplitPane;
     private JLabel mBlockScheme;
+    private JaviParser mJaviParser;
 
     public JaviSplitPane()
     {
@@ -44,28 +46,26 @@ public class JaviSplitPane extends JPanel implements ListSelectionListener
         return mSplitPane;
     }
 
-    public void setListData(ArrayList<String> listData)
+    public void setListData(JaviParser parser)
     {
-        mMethodsList.setListData(listData.toArray());
-        if (!listData.isEmpty()) {
+        mJaviParser = parser;
+        String [] listData = mJaviParser.methodNames();
+        mMethodsList.setListData(listData);
+        if (listData.length > 0) {
             mMethodsList.setSelectedIndex(0);
+            updateLabel((String)mMethodsList.getSelectedValue());
         }
     }
 
     protected void updateLabel(String name)
     {
-        ImageIcon icon = new ImageIcon();
-        mBlockScheme.setIcon(icon);
-        if (icon != null) {
-            mBlockScheme.setText(null);
-            } else {
-            mBlockScheme.setText("Image not found");
-        }
+        mBlockScheme.setText(mJaviParser.getMethodBodyByName(name));
     }
 
 
     @Override
     public void valueChanged(ListSelectionEvent e) {
-
+        JList list = (JList)e.getSource();
+        updateLabel((String)list.getSelectedValue());
     }
 }
