@@ -1,8 +1,5 @@
-import view.JaviFrame;
+import startDialog.JaviFrame;
 
-/**
- * Created by Anastasiia Kuzenkova on 10.03.15.
- */
 public class JaviMain
 {
     private static void createAndShowGUI()
@@ -13,10 +10,6 @@ public class JaviMain
     }
 
     public static void main(String[] args) {
-        javax.swing.SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                createAndShowGUI();
-            }
-        });
+        javax.swing.SwingUtilities.invokeLater(JaviMain::createAndShowGUI);
     }
 }
