@@ -6,12 +6,13 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
+import view.JaviBlockSchemeView;
 
 public class JaviSplitPane extends JPanel implements ListSelectionListener
 {
     private JList mMethodsList;
     private JSplitPane mSplitPane;
-    private JLabel mBlockScheme;
+    private JaviBlockSchemeView mBlockScheme;
     private JaviParser mJaviParser;
 
     public JaviSplitPane()
@@ -21,8 +22,7 @@ public class JaviSplitPane extends JPanel implements ListSelectionListener
         mMethodsList.addListSelectionListener(this);
 
         JScrollPane listScrollPane = new JScrollPane(mMethodsList);
-        mBlockScheme = new JLabel();
-        mBlockScheme.setHorizontalAlignment(JLabel.CENTER);
+        mBlockScheme = new JaviBlockSchemeView();
 
         JScrollPane blockSchemeScrollPane = new JScrollPane(mBlockScheme);
 
@@ -56,9 +56,9 @@ public class JaviSplitPane extends JPanel implements ListSelectionListener
 
     protected void updateLabel(String name)
     {
-        mBlockScheme.setText("<html>" + mJaviParser.getMethodBodyByName(name).replace("\n", "<br>") + "<html>");
+        mBlockScheme.setBlock(mJaviParser.getMethodBodyByName(name));
+        mBlockScheme.repaint();
     }
-
 
     @Override
     public void valueChanged(ListSelectionEvent e) {

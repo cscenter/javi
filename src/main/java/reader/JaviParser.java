@@ -6,6 +6,7 @@ import com.github.antlrjavaparser.api.body.BodyDeclaration;
 import com.github.antlrjavaparser.api.body.MethodDeclaration;
 import com.github.antlrjavaparser.api.body.TypeDeclaration;
 import model.JaviNode;
+import view.JaviBlockSchemeBlock;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,7 +14,7 @@ import java.util.HashMap;
 
 public class JaviParser
 {
-    private HashMap<String, String> mMethodHashMap;
+    private HashMap<String, JaviBlockSchemeBlock> mMethodHashMap;
 
     public JaviParser(File file)
     {
@@ -24,9 +25,11 @@ public class JaviParser
                 for (BodyDeclaration bodyDeclaration : typeDeclaration.getMembers()) {
                     if (bodyDeclaration instanceof MethodDeclaration) {
                         MethodDeclaration methodDeclaration = (MethodDeclaration) bodyDeclaration;
-                        JaviKeyWordsPrinterVisitor visitor = new JaviKeyWordsPrinterVisitor(methodDeclaration);
-                        methodDeclaration.accept(visitor, null);
-                        mMethodHashMap.put(methodDeclaration.getName(), methodString(visitor.getRoot()));
+                        JaviBlockSchemeVisitor visitor = new JaviBlockSchemeVisitor();
+                        JaviBlockSchemeBlock root = new JaviBlockSchemeBlock();
+                        methodDeclaration.getBody().accept(visitor, root.getNestedStatements().get(0));
+                        root.setCorrectOutgoingBlocks();
+                        mMethodHashMap.put(methodDeclaration.getName(), root);
                     }
                 }
             }
@@ -41,7 +44,7 @@ public class JaviParser
         return mMethodHashMap.keySet().toArray(new String[mMethodHashMap.keySet().size()]);
     }
 
-    public String getMethodBodyByName(String methodName)
+    public JaviBlockSchemeBlock getMethodBodyByName(String methodName)
     {
         return mMethodHashMap.get(methodName);
     }
