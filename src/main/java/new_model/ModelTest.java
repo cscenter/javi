@@ -12,7 +12,8 @@ import java.util.List;
 
 public class ModelTest {
     public static void main(String[] args) throws IOException {
-        File file = new File("examples/ForEachSimpleTest.java");
+	String examplePath = args[0];
+        File file = new File(examplePath);
         // parse file
         CompilationUnit fileParsed = JavaParser.parse(file);
 

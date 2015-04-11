@@ -68,7 +68,7 @@ public class JaviMain
     public static void main(String[] args) throws Exception {
     	System.out.println("params:" + args.length);
      	if(args.length >= 1) {
-     		testNewModel();
+     		ModelTest.main(args);
      	}
      	else {	
         	javax.swing.SwingUtilities.invokeLater(JaviMain::createAndShowGUI);
