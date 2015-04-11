@@ -21,6 +21,7 @@ public class JaviFrame extends JFrame {
         fileMenu.add(openItem);
         openItem.addActionListener(e -> {
             JFileChooser openFile = new JFileChooser();
+            openFile.setCurrentDirectory(new File("."));
             FileNameExtensionFilter filter = new FileNameExtensionFilter(
                     "java source files", "java");
             openFile.setFileFilter(filter);
@@ -41,6 +42,7 @@ public class JaviFrame extends JFrame {
         setJMenuBar(menuBar);
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
     }
 }

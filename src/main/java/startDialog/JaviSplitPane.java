@@ -56,8 +56,14 @@ public class JaviSplitPane extends JPanel implements ListSelectionListener
 
     protected void updateLabel(String name)
     {
+        if (name == null) {
+            return;
+        }
+        mBlockScheme.removeAll();
+        mBlockScheme.updateUI();
         mBlockScheme.setBlock(mJaviParser.getMethodBodyByName(name));
         mBlockScheme.repaint();
+        mBlockScheme.revalidate();
     }
 
     @Override

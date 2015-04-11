@@ -51,7 +51,7 @@ public class JaviBlockSchemeVisitor extends VoidVisitorAdapter
     {
         ArrayList<JaviBlockSchemeBlock> statements = (ArrayList<JaviBlockSchemeBlock>) arg;
         JaviBlockSchemeBlock ifBlock = new JaviBlockSchemeBlock
-                (JaviBlockSchemeBlockType.JaviBlockSchemeBlockTypeIfStatement, n.getCondition().toString());
+                (JaviBlockSchemeBlockType.JaviBlockSchemeBlockTypeIfStatement, n.getCondition().toString(), 2);
         statements.add(ifBlock);
         n.getThenStmt().accept(this,ifBlock.getNestedStatements().get(0));
         if(n.getElseStmt() != null) {
@@ -84,12 +84,12 @@ public class JaviBlockSchemeVisitor extends VoidVisitorAdapter
 
             while(i$.hasNext()) {
                 e = (Expression)i$.next();
-                content.append(e.toString() + "\n");
+                content.append(e.toString() + ";");
             }
         }
 
         if(n.getCompare() != null) {
-            content.append(n.getCompare().toString() + "\n");
+            content.append(n.getCompare().toString() + ";");
         }
 
         if(n.getUpdate() != null) {
@@ -97,11 +97,11 @@ public class JaviBlockSchemeVisitor extends VoidVisitorAdapter
 
             while(i$.hasNext()) {
                 e = (Expression)i$.next();
-                content.append(e.toString() + "\n");
+                content.append(e.toString() + ";");
             }
         }
         JaviBlockSchemeBlock forBlock = new JaviBlockSchemeBlock
-                (JaviBlockSchemeBlockType.JaviBlockSchemeBlockTypeForStatement, content.toString());
+                (JaviBlockSchemeBlockType.JaviBlockSchemeBlockTypeForStatement, content.toString(), 1);
         statements.add(forBlock);
 
         n.getBody().accept(this, forBlock.getNestedStatements().get(0));
@@ -118,7 +118,7 @@ public class JaviBlockSchemeVisitor extends VoidVisitorAdapter
     {
         ArrayList<JaviBlockSchemeBlock> statements = (ArrayList<JaviBlockSchemeBlock>) arg;
         JaviBlockSchemeBlock expressionBlock = new JaviBlockSchemeBlock
-                (JaviBlockSchemeBlockType.JaviBlockSchemeBlockTypeReturn, n.getExpr().toString());
+                (JaviBlockSchemeBlockType.JaviBlockSchemeBlockTypeReturn, n.getExpr().toString(), 0);
         statements.add(expressionBlock);
     }
 
@@ -139,7 +139,7 @@ public class JaviBlockSchemeVisitor extends VoidVisitorAdapter
     {
         ArrayList<JaviBlockSchemeBlock> statements = (ArrayList<JaviBlockSchemeBlock>) arg;
         JaviBlockSchemeBlock expressionBlock = new JaviBlockSchemeBlock
-                (JaviBlockSchemeBlockType.JaviBlockSchemeBlockTypeThrow, n.getExpr().toString());
+                (JaviBlockSchemeBlockType.JaviBlockSchemeBlockTypeThrow, n.getExpr().toString(), 0);
         statements.add(expressionBlock);
     }
 
@@ -160,7 +160,7 @@ public class JaviBlockSchemeVisitor extends VoidVisitorAdapter
     {
         ArrayList<JaviBlockSchemeBlock> statements = (ArrayList<JaviBlockSchemeBlock>) arg;
         JaviBlockSchemeBlock expressionBlock = new JaviBlockSchemeBlock
-                (JaviBlockSchemeBlockType.JaviBlockSchemeBlockTypeExpression, n.getExpression().toString());
+                (JaviBlockSchemeBlockType.JaviBlockSchemeBlockTypeExpression, n.getExpression().toString(), 0);
         statements.add(expressionBlock);
     }
 }

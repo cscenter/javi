@@ -7,6 +7,7 @@ import com.github.antlrjavaparser.api.body.MethodDeclaration;
 import com.github.antlrjavaparser.api.body.TypeDeclaration;
 import model.JaviNode;
 import view.JaviBlockSchemeBlock;
+import view.JaviBlockSchemeBlockType;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,9 +27,8 @@ public class JaviParser
                     if (bodyDeclaration instanceof MethodDeclaration) {
                         MethodDeclaration methodDeclaration = (MethodDeclaration) bodyDeclaration;
                         JaviBlockSchemeVisitor visitor = new JaviBlockSchemeVisitor();
-                        JaviBlockSchemeBlock root = new JaviBlockSchemeBlock();
+                        JaviBlockSchemeBlock root = new JaviBlockSchemeBlock(JaviBlockSchemeBlockType.JaviBlockSchemeBlockTypeMethod, methodDeclaration.getName(), 1);
                         methodDeclaration.getBody().accept(visitor, root.getNestedStatements().get(0));
-                        root.setCorrectOutgoingBlocks();
                         mMethodHashMap.put(methodDeclaration.getName(), root);
                     }
                 }
