@@ -4,19 +4,19 @@ public class FizzBuzz
     public static void main(String[] args) {
         for (int i = 1; i <= 100; ++i) {
             if ((i % 5) == 0  && (i % 7) == 0) {
-                int fizzbuzz = 0;
+                System.out.print("fizzbuzz");
             }
             else if ((i % 5) == 0) {
-                int fizz = 2;
+                System.out.print("fizz");
             }
             else if ((i % 7) == 0) {
-                int buzz = 5;
+                System.out.print("buzz");
             }
             else {
-                int i = 20;
+                System.out.print(i);
             }
-            int a = 0;
+            System.out.print(" ");
         }
-        int n = 9;
+        System.out.println();
     }
 }
