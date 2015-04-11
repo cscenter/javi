@@ -65,10 +65,12 @@ public class JaviBlockSchemeView extends JPanel
     {
         int n = block.getNestedStatements().size();
         for (int i = 0; i < n; ++i) {
+            Object previousVertex = blockVertex;
             for (JaviBlockSchemeBlock javiBlock : block.getNestedStatements().get(i)) {
                 Object nestedVertex = vertex(graph, javiBlock.getContent(), javiBlock.getType());
-                graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nestedVertex);
+                graph.insertEdge(graph.getDefaultParent(), null, "", previousVertex, nestedVertex);
                 constructGraph(graph, nestedVertex, javiBlock);
+                previousVertex = nestedVertex;
             }
         }
     }
