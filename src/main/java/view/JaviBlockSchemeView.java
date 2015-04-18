@@ -6,6 +6,7 @@ import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.util.mxConstants;
+import com.mxgraph.util.mxEvent;
 import com.mxgraph.util.mxRectangle;
 import com.mxgraph.view.mxGraph;
 import com.mxgraph.view.mxStylesheet;
@@ -19,6 +20,7 @@ public class JaviBlockSchemeView extends JPanel
 
     private JaviBlockSchemeBlock block;
     private HashMap<JaviBlockSchemeBlockType, String> blockShapes;
+    private mxGraph graph;
 
     public JaviBlockSchemeView(JaviBlockSchemeBlock block)
     {
@@ -33,7 +35,7 @@ public class JaviBlockSchemeView extends JPanel
     public void setBlock(JaviBlockSchemeBlock block)
     {
         this.block = block;
-        mxGraph graph = new mxGraph();
+        graph = new mxGraph();
         graph.setAllowDanglingEdges(false);
         graph.setCellsEditable(false);
         graph.setCellsSelectable(false);
@@ -59,6 +61,11 @@ public class JaviBlockSchemeView extends JPanel
         mxGraphComponent graphComponent = new mxGraphComponent(graph);
         add(graphComponent);
         layoutGraph(graph);
+    }
+
+    public mxGraph getGraph()
+    {
+        return graph;
     }
 
     private void constructGraph(mxGraph graph, Object blockVertex, JaviBlockSchemeBlock block)

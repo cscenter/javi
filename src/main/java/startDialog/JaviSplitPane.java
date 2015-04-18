@@ -71,4 +71,8 @@ public class JaviSplitPane extends JPanel implements ListSelectionListener
         JList list = (JList)e.getSource();
         updateLabel((String)list.getSelectedValue());
     }
+    public JaviBlockSchemeView getmBlockScheme()
+    {
+        return mBlockScheme;
+    }
 }
