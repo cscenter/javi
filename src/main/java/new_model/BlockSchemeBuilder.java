@@ -4,9 +4,11 @@ import com.github.antlrjavaparser.api.Comment;
 import com.github.antlrjavaparser.api.body.CatchParameter;
 import com.github.antlrjavaparser.api.body.Resource;
 import com.github.antlrjavaparser.api.expr.AssignExpr;
+import com.github.antlrjavaparser.api.expr.BinaryExpr;
 import com.github.antlrjavaparser.api.expr.LambdaExpr;
 import com.github.antlrjavaparser.api.expr.MethodCallExpr;
 import com.github.antlrjavaparser.api.expr.MethodReferenceExpr;
+import com.github.antlrjavaparser.api.expr.UnaryExpr;
 import com.github.antlrjavaparser.api.expr.VariableDeclarationExpr;
 import com.github.antlrjavaparser.api.stmt.BreakStmt;
 import com.github.antlrjavaparser.api.stmt.CatchClause;
@@ -17,6 +19,8 @@ import com.github.antlrjavaparser.api.stmt.ForeachStmt;
 import com.github.antlrjavaparser.api.stmt.IfStmt;
 import com.github.antlrjavaparser.api.stmt.ReturnStmt;
 import com.github.antlrjavaparser.api.stmt.Statement;
+import com.github.antlrjavaparser.api.stmt.SwitchEntryStmt;
+import com.github.antlrjavaparser.api.stmt.SwitchStmt;
 import com.github.antlrjavaparser.api.stmt.TryStmt;
 import com.github.antlrjavaparser.api.stmt.WhileStmt;
 import com.github.antlrjavaparser.api.visitor.VoidVisitorAdapter;
@@ -27,14 +31,14 @@ import java.util.Stack;
 
 public class BlockSchemeBuilder extends VoidVisitorAdapter {
     BlockScheme scheme;
-    Stack<NodePosition> innerNodes = new Stack<>();
+    Stack<Node> innerNodes = new Stack<>();
     Node currentNode;
     boolean processingElseBranch = false;
 
     public BlockSchemeBuilder(BlockScheme blockScheme) {
         scheme = blockScheme;
         currentNode = null;
-        innerNodes.add(new NodePosition(0, Integer.MAX_VALUE, scheme.getStart()));
+        innerNodes.add(scheme.getStart());
     }
 
     // is node "complex"?
@@ -44,8 +48,10 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
                 || node.getType() == NodeType.FOREACH
                 || node.getType() == NodeType.WHILE
                 || node.getType() == NodeType.DOWHILE
+                || node.getType() == NodeType.CATCH
                 || node.getType() == NodeType.TRY
-                || node.getType() == NodeType.CATCH) {
+                || node.getType() == NodeType.SWITCH
+                || node.getType() == NodeType.CASE) {
             return true;
         }
         return false;
@@ -63,8 +69,8 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
         assert !innerNodes.empty();
 
         Node node = createMyNodeFromAntlrNode(antlrNode);
-        NodePosition currentNodePosition = new NodePosition(antlrNode.getBeginLine(), antlrNode.getEndLine(), node);
-        NodePosition prevNodePosition = innerNodes.peek();
+        Node prevNode = innerNodes.peek();
+
 
         // special case else branch
         if (processingElseBranch) {
@@ -74,11 +80,11 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
 
         // 1'st
         if (currentNode == null) {
-            assert prevNodePosition.contains(currentNodePosition);
+            assert prevNode.contains(node);
 
-            prevNodePosition.node.attachInner(node);
+            prevNode.attachInner(node);
             if (isBranchingNode(node)) {
-                innerNodes.add(currentNodePosition);
+                innerNodes.add(node);
                 currentNode = null;
             } else {
                 currentNode = node;
@@ -88,11 +94,11 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
 
         //2'nd
         assert currentNode != null;
-        if (prevNodePosition.contains(currentNodePosition)) {
+        if (prevNode.contains(node)) {
             currentNode.setNext(node);
             node.level = currentNode.level;
             if (isBranchingNode(node)) {
-                innerNodes.add(currentNodePosition);
+                innerNodes.add(node);
                 currentNode = null;
             } else {
                 currentNode = node;
@@ -101,16 +107,16 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
         }
 
         //3'rd
-        if (!prevNodePosition.contains(currentNodePosition)) {
-            NodePosition lastNotContaining = innerNodes.peek();
-            while (!innerNodes.peek().contains(currentNodePosition)) {
+        if (!prevNode.contains(node)) {
+            Node lastNotContaining = innerNodes.peek();
+            while (!innerNodes.peek().contains(node)) {
                 lastNotContaining = innerNodes.pop();
             }
-            lastNotContaining.node.setNext(node);
-            node.level = lastNotContaining.node.level;
+            lastNotContaining.setNext(node);
+            node.level = lastNotContaining.level;
 
             if (isBranchingNode(node)) {
-                innerNodes.add(currentNodePosition);
+                innerNodes.add(node);
                 currentNode = null;
             }
             else {
@@ -123,15 +129,14 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
      Special case node processing.
     * */
     public void processElseNode(com.github.antlrjavaparser.api.Node antlrNode) {
-        IfNode node = (IfNode) innerNodes.peek().node; // Точно в этом уверены
+        IfNode node = (IfNode) innerNodes.peek(); // Точно в этом уверены
 
         Node newNode = createMyNodeFromAntlrNode(antlrNode);
-        NodePosition currentNodePosition = new NodePosition(antlrNode.getBeginLine(), antlrNode.getEndLine(), newNode);
 
         node.setNo(newNode);
         newNode.level = node.level + 1;
         if (isBranchingNode(newNode)) {
-            innerNodes.add(currentNodePosition);
+            innerNodes.add(newNode);
             currentNode = null;
         }
         else {
@@ -146,38 +151,38 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
     * */
     private Node createMyNodeFromAntlrNode(com.github.antlrjavaparser.api.Node antlrNode) {
         if (antlrNode instanceof IfStmt) {
-            return new IfNode();
+            return new IfNode((IfStmt)antlrNode);
         } else if (antlrNode instanceof ForStmt) {
-            return new ForNode();
+            return new ForNode((ForStmt)antlrNode);
         } else if (antlrNode instanceof ForeachStmt) {
-            return new ForEachNode();
+            return new ForEachNode((ForeachStmt)antlrNode);
         } else if (antlrNode instanceof WhileStmt) {
-            WhileStmt condition = (WhileStmt) antlrNode;
-            return new WhileNode(condition.getCondition());
-        } else if (antlrNode instanceof DoStmt) {
-            DoStmt condition = (DoStmt) antlrNode;
-            return new DoWhileNode(condition.getCondition());
+            return new WhileNode((WhileStmt)antlrNode);
         } else if (antlrNode instanceof AssignExpr) {
-            AssignExpr expr = (AssignExpr) antlrNode;
-            return new AssignNode(expr.getTarget().toString(), expr.getValue().toString());
+            return new AssignNode((AssignExpr) antlrNode);
+        } else if (antlrNode instanceof UnaryExpr) {
+            return new UnaryNode((UnaryExpr) antlrNode);
+        } else if (antlrNode instanceof BinaryExpr){
+            return new BinaryNode((BinaryExpr) antlrNode);
         } else if (antlrNode instanceof VariableDeclarationExpr) {
-            VariableDeclarationExpr expr = (VariableDeclarationExpr) antlrNode;
-            return new DeclarationNode(expr.getType(), expr.getVars(), expr.getAnnotations());
+            return new DeclarationNode((VariableDeclarationExpr) antlrNode);
         } else if (antlrNode instanceof MethodCallExpr) {
             MethodCallExpr method = (MethodCallExpr) antlrNode;
             return new MethodCallNode(method);
         } else if (antlrNode instanceof ReturnStmt) {
-            ReturnStmt expr = (ReturnStmt) antlrNode;
-            return new ReturnNode(expr.getExpr());
+            return new ReturnNode((ReturnStmt) antlrNode);
         } else if (antlrNode instanceof BreakStmt) {
-            return new BreakNode();
+            return new BreakNode((BreakStmt)antlrNode);
         } else if (antlrNode instanceof ContinueStmt) {
-            return new ContinueNode();
+            return new ContinueNode((ContinueStmt)antlrNode);
         } else if (antlrNode instanceof CatchClause) {
-            CatchClause clause = (CatchClause) antlrNode;
-            return new CatchNode(clause);
+            return new CatchNode((CatchClause) antlrNode);
         } else if (antlrNode instanceof TryStmt) {
-            return new TryNode();
+            return new TryNode((TryStmt)antlrNode);
+        } else if (antlrNode instanceof SwitchEntryStmt) {
+            return new CaseNode((SwitchEntryStmt)antlrNode);
+        } else if (antlrNode instanceof SwitchStmt) {
+            return new SwitchNode((SwitchStmt) antlrNode );
         }
         assert false;
         return null;
@@ -235,6 +240,16 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
     }
 
     @Override
+    public void visit(UnaryExpr unaryExpr, Object o){
+        processNode(unaryExpr);
+    }
+
+    @Override
+    public void visit(BinaryExpr binaryExpr, Object o){
+        processNode(binaryExpr);
+    }
+
+    @Override
     public void visit(VariableDeclarationExpr declarationExpr, Object o) {
         processNode(declarationExpr);
     }
@@ -278,6 +293,24 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
     }
 
     @Override
+    public void visit(SwitchStmt switchStmt, Object o) {
+        processNode(switchStmt);
+        List<SwitchEntryStmt> switchEntryStmts = switchStmt.getEntries();
+        for (SwitchEntryStmt c : switchEntryStmts) {
+            c.accept(this, o);
+        }
+    }
+
+    @Override
+    public void visit(SwitchEntryStmt switchEntryStmt, Object o) {
+        processNode(switchEntryStmt);
+        List<Statement> loopBody = switchEntryStmt.getStmts();
+//        for (Statement s : loopBody) {
+//            s.accept(this, o);
+//        }
+    }
+
+    @Override
     public void visit(Comment comment, Object o) {
 
     }
@@ -307,11 +340,18 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
             while (innerNodes.size() != 2) {
                 innerNodes.pop();
             }
-            NodePosition top = innerNodes.pop();
-            top.node.setNext(new EndNode());
+            Node top = innerNodes.pop();
+            top.setNext(new EndNode());
         } else {
             assert currentNode != null;
             currentNode.setNext(new EndNode());
         }
     }
+
+//    public void secondBuild() {
+//        BlockScheme model;
+//        while (model == ) {
+//
+//        }
+//    }
 }

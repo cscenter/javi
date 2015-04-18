@@ -1,15 +1,29 @@
 package new_model;
 
-import com.github.antlrjavaparser.api.body.CatchParameter;
 import com.github.antlrjavaparser.api.body.VariableDeclarator;
-import com.github.antlrjavaparser.api.expr.AnnotationExpr;
+import com.github.antlrjavaparser.api.expr.AssignExpr;
+import com.github.antlrjavaparser.api.expr.BinaryExpr;
 import com.github.antlrjavaparser.api.expr.Expression;
 import com.github.antlrjavaparser.api.expr.MethodCallExpr;
+import com.github.antlrjavaparser.api.expr.UnaryExpr;
+import com.github.antlrjavaparser.api.expr.VariableDeclarationExpr;
+import com.github.antlrjavaparser.api.stmt.BreakStmt;
 import com.github.antlrjavaparser.api.stmt.CatchClause;
+import com.github.antlrjavaparser.api.stmt.ContinueStmt;
+import com.github.antlrjavaparser.api.stmt.ForStmt;
+import com.github.antlrjavaparser.api.stmt.ForeachStmt;
+import com.github.antlrjavaparser.api.stmt.IfStmt;
+import com.github.antlrjavaparser.api.stmt.ReturnStmt;
+import com.github.antlrjavaparser.api.stmt.Statement;
+import com.github.antlrjavaparser.api.stmt.SwitchEntryStmt;
+import com.github.antlrjavaparser.api.stmt.SwitchStmt;
+import com.github.antlrjavaparser.api.stmt.TryStmt;
+import com.github.antlrjavaparser.api.stmt.WhileStmt;
 import com.github.antlrjavaparser.api.type.Type;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 enum NodeType {
     START,
@@ -26,15 +40,75 @@ enum NodeType {
     BREAK,
     CONTINUE,
     TRY,
-    CATCH
+    CATCH,
+    SWITCH,
+    CASE,
+    UNARY,
+    BINARY
 }
 
-
-//EL: все поля должны быть приватными
 //EL: не все классы в иерархии наследования имеют nestedNode => в базовом класса attachInner не нужен
 abstract class Node {
     protected Node next;
     protected int level;
+    protected int startLine;
+    protected int endLine;
+    protected int startColumn;
+    protected int endColumn;
+
+    protected Node(com.github.antlrjavaparser.api.Node node) {
+        startLine = node.getBeginLine();
+        endLine = node.getEndLine();
+        startColumn = node.getBeginColumn();
+        endColumn = node.getEndColumn();
+    }
+
+    protected Node(int startLine, int endLine, int startColumn, int endColumn) {
+        this.startLine = startLine;
+        this.endLine = endLine;
+        this.startColumn = startColumn;
+        this.endColumn = endColumn;
+    }
+
+       public int getStartLine() {
+        return startLine;
+    }
+
+    public int getEndLine() {
+        return endLine;
+    }
+
+    public int getStartColumn() {
+        return startColumn;
+    }
+
+    public int getEndColumn() {
+        return endColumn;
+    }
+
+    public void setStartLine(int pos) {
+        this.startLine = pos;
+    }
+
+    public void setEndLine(int pos) {
+        this.endLine = pos;
+    }
+
+    public void setStartColumn(int pos) {
+        this.startColumn = pos;
+    }
+
+    public void setEndColumn(int pos) {
+        endColumn = pos;
+    }
+
+    public boolean contains(Node n) {
+        if (this.getStartLine() < n.getStartLine() && this.getEndLine() > n.getEndLine()) {
+            return true;
+        } else {
+            return this.getStartColumn() < n.getStartColumn() && this.getEndColumn() > n.getEndColumn();
+        }
+    }
 
     // Get the node type
     public abstract NodeType getType();
@@ -52,6 +126,10 @@ abstract class Node {
 }
 
 class StartNode extends Node {
+    public StartNode() {
+        super(0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
+    }
+
     @Override
     public String toString() {
         return "StartNode\n";
@@ -69,8 +147,11 @@ class StartNode extends Node {
     }
 }
 
-
 class EndNode extends Node {
+    public EndNode() {
+        super(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    }
+
     @Override
     public String toString() {
         return "EndNode";
@@ -90,6 +171,16 @@ class EndNode extends Node {
 class IfNode extends Node {
     private Node yes;
     private Node no;
+    private String condition;
+    private String body;
+    private String else_body;
+
+    public IfNode(IfStmt node) {
+        super(node);
+        this.condition = node.getCondition().toString();
+        this.body = node.getThenStmt().toString();
+        this.else_body = node.getElseStmt().toString();
+    }
 
     public Node getYes() {
         return yes;
@@ -145,6 +236,19 @@ class IfNode extends Node {
 
 class ForNode extends Node {
     private Node nestedFirst;
+    private String body;
+    private String condition;
+
+    public ForNode(ForStmt node) {
+        super(node);
+        List<Expression> init = node.getInit();
+        List<Expression> update = node.getUpdate();
+        Expression compare = node.getCompare();
+        this.body = node.getBody().toString();
+        String inits = init.stream().map(Expression::toString).collect(Collectors.joining(" "));
+        String updates = update.stream().map(Expression::toString).collect(Collectors.joining(" "));
+        condition = inits + " " + compare.toString() + " " + updates;
+    }
 
     @Override
     public String toString() {
@@ -181,6 +285,14 @@ class ForNode extends Node {
 
 class ForEachNode extends Node {
     private Node nestedFirst;
+    private String body;
+    private String condition;
+
+    public ForEachNode(ForeachStmt node) {
+        super(node);
+        this.body = node.getBody().toString();
+        this.condition = node.getIterable().toString() + " " + node.getVariable().toString();
+    }
 
     @Override
     public String toString() {
@@ -215,15 +327,23 @@ class ForEachNode extends Node {
     }
 }
 
-
-//EL: зачем нам два поля left и right?
 class AssignNode extends Node {
-    private final String left;
-    private final String right;
+    private String exp;
 
-    public AssignNode(String left, String right) {
-        this.left = left;
-        this.right = right;
+    public AssignNode(AssignExpr node) {
+        super(node.getTarget());
+        AssignExpr.Operator op = node.getOperator();
+        String operator = "";
+        if (op.toString() == "assign") {
+            operator = " = ";
+        } else if (op.toString() == "plus") {
+            operator = "+=";
+        } else if (op.toString() == "minus") {
+            operator = "-=";
+        }
+
+        this.exp = node.getTarget().toString() + " " + operator +
+                " " + node.getValue().toString();
     }
 
     @Override
@@ -241,23 +361,104 @@ class AssignNode extends Node {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < level; ++i)
             builder.append("--");
-        builder.append(left).append(" op ").append(right).append("\n");
+        builder.append(exp).append("\n");
         return builder.toString();
     }
 }
 
-//EL: модель должна быть устроена так, чтобы классу, который выводит на экран, было удобно
-//EL: не важно, как при этом устроен antlr
+class UnaryNode extends Node {
+    private String exp;
+
+    public UnaryNode(UnaryExpr node) {
+        super(node);
+        UnaryExpr.Operator op = node.getOperator();
+        String operator = "";
+        if (op.toString() == "preIncrement") {
+            operator = "++";
+            this.exp = operator + node.getExpr().toString();
+        } else if (op.toString() == "posIncrement") {
+            operator = "++";
+            this.exp = node.getExpr().toString() + operator;
+        } else if (op.toString() == "posDecrement") {
+            operator = "--";
+            this.exp = node.getExpr().toString() + operator;
+        } else if (op.toString() == "preDecrement") {
+            operator = "--";
+            this.exp = operator + node.getExpr().toString();
+        }
+    }
+
+    @Override
+    public NodeType getType() {
+        return NodeType.UNARY;
+    }
+
+    @Override
+    public void attachInner(Node node) {
+
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < level; ++i)
+            builder.append("--");
+        builder.append(exp).append("\n");
+        return builder.toString();
+    }
+}
+
+class BinaryNode extends Node {
+    private String exp;
+
+    public BinaryNode(BinaryExpr node) {
+        super(node);
+        BinaryExpr.Operator op = node.getOperator();
+        String operator = "";
+        if (op.toString() == "equals") {
+            operator = " == ";
+        } else if (op.toString() == "greater") {
+            operator = " > ";
+        } else if (op.toString() == "less") {
+            operator = " < ";
+        } else if (op.toString() == "greaterEquals") {
+            operator = " >= ";
+        } else if (op.toString() == "lessEquals") {
+            operator = " <= ";
+        } else if (op.toString() == "notEquals") {
+            operator = " != ";
+        }
+
+        exp = node.getLeft().toString() + operator + node.getRight().toString();
+    }
+
+    @Override
+    public NodeType getType() {
+        return NodeType.BINARY;
+    }
+
+    @Override
+    public void attachInner(Node node) {
+
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < level; ++i)
+            builder.append("--");
+        builder.append(exp).append("\n");
+        return builder.toString();
+    }
+}
+
 class DeclarationNode extends Node {
-    private Type type;
-    private List<VariableDeclarator> vars;
-    private List<AnnotationExpr> annotations;
+    private String exp;
 
-    public DeclarationNode(Type type, List<VariableDeclarator> vars, List<AnnotationExpr> annotations) {
-
-        this.type = type;
-        this.vars = vars;
-        this.annotations = annotations;
+    public DeclarationNode(VariableDeclarationExpr node) {
+        super(node);
+        String vars = node.getVars().stream().map(VariableDeclarator::toString).collect(Collectors.joining(" "));
+        exp = node.getType().toString() + " " + vars;
     }
 
     @Override
@@ -266,10 +467,7 @@ class DeclarationNode extends Node {
         for (int i = 0; i < level; ++i)
             builder.append("--");
 
-        builder.append(type.toString()).append(" ");
-        for (VariableDeclarator var : vars) {
-            builder.append(var).append(" ");
-        }
+        builder.append(exp);
         builder.append("\n");
         return builder.toString();
     }
@@ -286,24 +484,25 @@ class DeclarationNode extends Node {
 }
 
 class MethodCallNode extends Node {
-    private Expression scope;
-    private List<Type> typeArgs = new ArrayList<Type>();
-    private List<Expression> args = new ArrayList<Expression>();
-    private String name;
+    private String method;
 
-    public MethodCallNode(MethodCallExpr methodCallExpr) {
-        List<Type> tArgs = methodCallExpr.getTypeArgs();
-        List<Expression> arg = methodCallExpr.getArgs();
+    public MethodCallNode(MethodCallExpr node) {
+        super(node);
+
+        List<Type> tArgs = node.getTypeArgs();
+        List<Expression> arg = node.getArgs();
+
+        String type = "";
+        String args = "";
 
         if (tArgs != null) {
-            this.typeArgs =tArgs;
+            type = tArgs.stream().map(Type::toString).collect(Collectors.joining(" "));
         }
         if (arg != null) {
-            this.args = arg;
+            args = arg.stream().map(Expression::toString).collect(Collectors.joining(" "));
         }
 
-        this.name = methodCallExpr.getName();
-        this.scope = methodCallExpr.getScope();
+        this.method = node.getScope().toString() + type + node.getName() + args;
     }
 
     @Override
@@ -312,14 +511,8 @@ class MethodCallNode extends Node {
         for (int i = 0; i < level; ++i)
             builder.append("--");
 
-        builder.append(scope.toString()).append(".").append(name).append("(");
-        for (Expression exp : args) {
-            builder.append(exp).append(" ");
-        }
-        for (Type t : typeArgs) {
-            builder.append(t).append(" ");
-        }
-        builder.append(")\n");
+        builder.append(method);
+        builder.append("\n");
         return builder.toString();
     }
 
@@ -335,10 +528,11 @@ class MethodCallNode extends Node {
 }
 
 class ReturnNode extends Node{
-    private Expression expression;
+    private String expression;
 
-    public ReturnNode(Expression expression) {
-        this.expression = expression;
+    public ReturnNode(ReturnStmt node) {
+        super(node);
+        this.expression = node.getExpr().toString();
     }
 
     @Override
@@ -364,6 +558,10 @@ class ReturnNode extends Node{
 
 class BreakNode extends Node {
 
+    protected BreakNode(BreakStmt node) {
+        super(node);
+    }
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
@@ -387,6 +585,10 @@ class BreakNode extends Node {
 
 class ContinueNode extends Node {
 
+    protected ContinueNode(ContinueStmt node) {
+        super(node);
+    }
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
@@ -409,10 +611,13 @@ class ContinueNode extends Node {
 
 class WhileNode extends Node {
     private Node nestedFirst;
-    private Expression condition;
+    private String condition;
+    private String body;
 
-    public WhileNode(Expression condition) {
-        this.condition = condition;
+    public WhileNode(WhileStmt node) {
+        super(node);
+        this.condition = node.getCondition().toString();
+        this.body = node.getBody().toString();
     }
 
     @Override
@@ -448,50 +653,21 @@ class WhileNode extends Node {
     }
 }
 
-class DoWhileNode extends Node {
-    private Node nestedFirst;
-    private Expression condition;
-
-    public DoWhileNode(Expression condition) {
-        this.condition = condition;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        Node tmp = nestedFirst;
-
-        for (int i = 0; i < level; ++i)
-            builder.append("--");
-
-        builder.append("do {\n");
-        while (tmp != null) {
-            builder.append(tmp.toString());
-            tmp = tmp.next;
-        }
-
-        for (int i = 0; i < level; ++i)
-            builder.append("--");
-        builder.append("}\n");
-        //builder.append("} while(").append(condition).append(") \n");
-        return builder.toString();
-    }
-
-    @Override
-    public NodeType getType() {
-        return NodeType.DOWHILE;
-    }
-
-    @Override
-    public void attachInner(Node node) {
-        assert nestedFirst == null;
-        nestedFirst = node;
-        node.level = this.level + 1;
-    }
-}
-
 class TryNode extends Node{
     private Node nestedFirst;
+    ArrayList<CatchNode> catchClause = new ArrayList<CatchNode>();
+    private String bodyTry;
+    private String bodyFinally;
+
+    public TryNode(TryStmt node) {
+        super(node);
+        for (CatchClause c : node.getCatchs()) {
+            catchClause.add(new CatchNode(c));
+        }
+
+        bodyTry = node.getTryBlock().toString();
+        bodyFinally = node.getFinallyBlock().toString();
+    }
 
     @Override
     public String toString() {
@@ -506,6 +682,7 @@ class TryNode extends Node{
             builder.append(tmp.toString());
             tmp = tmp.next;
         }
+
         return builder.toString();
     }
 
@@ -524,10 +701,13 @@ class TryNode extends Node{
 
 class CatchNode extends Node {
     private Node nestedFirst;
-    private CatchParameter except;
+    private String except;
+    private String bodyCatch;
 
-    public CatchNode(CatchClause catchClause) {
-        this.except = catchClause.getExcept();
+    public CatchNode(CatchClause node) {
+        super(node);
+        this.except = node.getExcept().toString();
+        this.bodyCatch = node.getCatchBlock().toString();
     }
 
     @Override
@@ -563,8 +743,102 @@ class CatchNode extends Node {
     }
 }
 
+class SwitchNode extends Node {
+    ArrayList<CaseNode> entries = new ArrayList<>();
+    private String selector;
+    public SwitchNode(SwitchStmt node) {
+        super(node);
+        for (SwitchEntryStmt c : node.getEntries()) {
+            entries.add(new CaseNode(c));
+        }
+        this.selector = "switch" + node.getSelector().toString();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+
+        for (int i = 0; i < level; ++i)
+            builder.append("--");
+
+        builder.append(selector).append(" { \n");
+
+        for (CaseNode i : entries) {
+            builder.append(i.toString());
+        }
+
+        for (int i = 0; i < level; ++i)
+            builder.append("--");
+        builder.append("}\n");
+        return builder.toString();
+    }
+
+    @Override
+    public NodeType getType() {
+        return NodeType.SWITCH;
+    }
+
+    @Override
+    public void attachInner(Node node) {
+//        int i = 0;
+//        entries.get(i) = (CaseNode) node;
+//        i
+//        node.level = this.level + 1;
+    }
+}
+
+class CaseNode extends Node {
+    private Node nestedFirst;
+    private String strCase;
+    public CaseNode(SwitchEntryStmt node) {
+        super(node);
+        String stmt = "";
+        StringBuilder builder = new StringBuilder();
+        List<Statement> body = node.getStmts();
+//        stmt = body.stream().map(Statement::toString).collect(Collectors.joining(" "));
+//        for (Statement b : body) {
+//            builder.append(b.toString());
+//        }
+        if (node.getLabel() != null) {
+            strCase = ("case " + node.getLabel().toString() + " : \n" + builder + "\n");
+        } else {
+            strCase = ("default : \n" + stmt);
+        }
+    }
+
+    @Override
+    public NodeType getType() {
+        return NodeType.CASE;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        Node tmp = nestedFirst;
+
+        for (int i = 0; i < level; ++i)
+            builder.append("--");
+        builder.append(strCase);
+
+        while (tmp != null) {
+            builder.append(tmp.toString());
+            tmp = tmp.next;
+        }
+
+        return builder.toString();
+    }
+
+    @Override
+    public void attachInner(Node node) {
+        assert nestedFirst == null;
+        nestedFirst = node;
+        node.level = this.level + 1;
+    }
+}
+
 // Block scheme consists of one lonely node.
 public class BlockScheme {
+    //private com.github.antlrjavaparser.api.Node node;
     private StartNode start = new StartNode();
 
     public StartNode getStart() {
@@ -584,20 +858,4 @@ public class BlockScheme {
     }
 }
 
-// This class incapsulates the node, and its line numbers.
-// We need it to determine whether one node contains the other or not
-class NodePosition {
-    int start;
-    int end;
-    Node node;
 
-    public NodePosition(int start, int end, Node node) {
-        this.start = start;
-        this.end = end;
-        this.node = node;
-    }
-
-    public boolean contains(NodePosition other) {
-        return other.start > this.start && other.end < this.end;
-    }
-}

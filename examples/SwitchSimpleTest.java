@@ -1,6 +1,8 @@
 public class SwitchSimpleTest {
     public static void main(String[] args) {
         int k = 3;
+        k++;
+        2 <= 2;
         switch (k) {
             case 1 :
                 int i = 1;
