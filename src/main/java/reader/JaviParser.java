@@ -5,9 +5,8 @@ import com.github.antlrjavaparser.api.CompilationUnit;
 import com.github.antlrjavaparser.api.body.BodyDeclaration;
 import com.github.antlrjavaparser.api.body.MethodDeclaration;
 import com.github.antlrjavaparser.api.body.TypeDeclaration;
-import model.JaviNode;
-import view.JaviBlockSchemeBlock;
-import view.JaviBlockSchemeBlockType;
+import new_model.BlockScheme;
+import new_model.BlockSchemeBuilder;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,7 +14,7 @@ import java.util.HashMap;
 
 public class JaviParser
 {
-    private HashMap<String, JaviBlockSchemeBlock> mMethodHashMap;
+    private HashMap<String, BlockScheme> mMethodHashMap;
 
     public JaviParser(File file)
     {
@@ -26,10 +25,12 @@ public class JaviParser
                 for (BodyDeclaration bodyDeclaration : typeDeclaration.getMembers()) {
                     if (bodyDeclaration instanceof MethodDeclaration) {
                         MethodDeclaration methodDeclaration = (MethodDeclaration) bodyDeclaration;
-                        JaviBlockSchemeVisitor visitor = new JaviBlockSchemeVisitor();
-                        JaviBlockSchemeBlock root = new JaviBlockSchemeBlock(JaviBlockSchemeBlockType.JaviBlockSchemeBlockTypeMethod, methodDeclaration.getName(), 1);
-                        methodDeclaration.getBody().accept(visitor, root.getNestedStatements().get(0));
-                        mMethodHashMap.put(methodDeclaration.getName(), root);
+                        BlockScheme blockScheme = new BlockScheme();
+                        BlockSchemeBuilder visitor = new BlockSchemeBuilder(blockScheme);
+                        methodDeclaration.accept(visitor, null);
+                        visitor.finish();
+
+                        mMethodHashMap.put(methodDeclaration.getName(), blockScheme);
                     }
                 }
             }
@@ -44,20 +45,8 @@ public class JaviParser
         return mMethodHashMap.keySet().toArray(new String[mMethodHashMap.keySet().size()]);
     }
 
-    public JaviBlockSchemeBlock getMethodBodyByName(String methodName)
+    public BlockScheme getMethodBodyByName(String methodName)
     {
         return mMethodHashMap.get(methodName);
-    }
-
-    private String methodString(JaviNode node) {
-        if (node.children.size() == 0) {
-            return node.paint();
-        }
-
-        StringBuilder result = new StringBuilder(node.paint());
-        for (JaviNode child : node.children) {
-            result.append(methodString(child));
-        }
-        return result.toString();
     }
 }

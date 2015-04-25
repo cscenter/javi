@@ -6,6 +6,7 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
+
 import view.JaviBlockSchemeView;
 
 public class JaviSplitPane extends JPanel implements ListSelectionListener
@@ -34,8 +35,7 @@ public class JaviSplitPane extends JPanel implements ListSelectionListener
         Dimension minimumSize = new Dimension(100, 50);
         listScrollPane.setMinimumSize(minimumSize);
         blockSchemeScrollPane.setMinimumSize(minimumSize);
-
-        mSplitPane.setPreferredSize(new Dimension(400, 200));
+        mSplitPane.setResizeWeight(0.1);
     }
 
     public JSplitPane getSplitPane()
