@@ -14,7 +14,7 @@ public class NewModelTest {
     @BeforeClass
     public static void getFilesFromExampleDirectory()
     {
-        mExamplesFolder = new File("examples/");
+        mExamplesFolder = new File("examples/SimpleTest");
     }
 
     @Test
