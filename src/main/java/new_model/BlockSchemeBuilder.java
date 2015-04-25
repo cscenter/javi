@@ -3,6 +3,7 @@ package new_model;
 import com.github.antlrjavaparser.api.Comment;
 import com.github.antlrjavaparser.api.body.CatchParameter;
 import com.github.antlrjavaparser.api.body.Resource;
+import com.github.antlrjavaparser.api.body.VariableDeclaratorId;
 import com.github.antlrjavaparser.api.expr.AssignExpr;
 import com.github.antlrjavaparser.api.expr.BinaryExpr;
 import com.github.antlrjavaparser.api.expr.LambdaExpr;
@@ -10,30 +11,20 @@ import com.github.antlrjavaparser.api.expr.MethodCallExpr;
 import com.github.antlrjavaparser.api.expr.MethodReferenceExpr;
 import com.github.antlrjavaparser.api.expr.UnaryExpr;
 import com.github.antlrjavaparser.api.expr.VariableDeclarationExpr;
-import com.github.antlrjavaparser.api.stmt.BreakStmt;
-import com.github.antlrjavaparser.api.stmt.CatchClause;
-import com.github.antlrjavaparser.api.stmt.ContinueStmt;
-import com.github.antlrjavaparser.api.stmt.DoStmt;
-import com.github.antlrjavaparser.api.stmt.ForStmt;
-import com.github.antlrjavaparser.api.stmt.ForeachStmt;
-import com.github.antlrjavaparser.api.stmt.IfStmt;
-import com.github.antlrjavaparser.api.stmt.ReturnStmt;
-import com.github.antlrjavaparser.api.stmt.Statement;
-import com.github.antlrjavaparser.api.stmt.SwitchEntryStmt;
-import com.github.antlrjavaparser.api.stmt.SwitchStmt;
-import com.github.antlrjavaparser.api.stmt.TryStmt;
-import com.github.antlrjavaparser.api.stmt.WhileStmt;
+import com.github.antlrjavaparser.api.stmt.*;
 import com.github.antlrjavaparser.api.visitor.VoidVisitorAdapter;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
 
 public class BlockSchemeBuilder extends VoidVisitorAdapter {
-    BlockScheme scheme;
-    Stack<Node> innerNodes = new Stack<>();
-    Node currentNode;
-    boolean processingElseBranch = false;
+    private BlockScheme scheme;
+    private Stack<Node> innerNodes = new Stack<>();
+    private Node currentNode;
+    private boolean processingElseBranch = false;
+    private ArrayList<ReturnNode> returnNodes = new ArrayList<>();
 
     public BlockSchemeBuilder(BlockScheme blockScheme) {
         scheme = blockScheme;
@@ -51,7 +42,8 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
                 || node.getType() == NodeType.CATCH
                 || node.getType() == NodeType.TRY
                 || node.getType() == NodeType.SWITCH
-                || node.getType() == NodeType.CASE) {
+                || node.getType() == NodeType.CASE
+                || node.getType() == NodeType.LABEL) {
             return true;
         }
         return false;
@@ -80,20 +72,19 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
 
         // 1'st
         if (currentNode == null) {
-            assert prevNode.contains(node);
-
-            prevNode.attachInner(node);
-            if (isBranchingNode(node)) {
-                innerNodes.add(node);
-                currentNode = null;
-            } else {
-                currentNode = node;
+            if (prevNode.contains(node)) {
+                prevNode.attachInner(node);
+                if (isBranchingNode(node)) {
+                    innerNodes.add(node);
+                    currentNode = null;
+                } else {
+                    currentNode = node;
+                }
+                return;
             }
-            return;
         }
 
         //2'nd
-        assert currentNode != null;
         if (prevNode.contains(node)) {
             currentNode.setNext(node);
             node.level = currentNode.level;
@@ -170,7 +161,9 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
             MethodCallExpr method = (MethodCallExpr) antlrNode;
             return new MethodCallNode(method);
         } else if (antlrNode instanceof ReturnStmt) {
-            return new ReturnNode((ReturnStmt) antlrNode);
+            ReturnNode returnNode = new ReturnNode((ReturnStmt) antlrNode);
+            returnNodes.add(returnNode);
+            return returnNode;
         } else if (antlrNode instanceof BreakStmt) {
             return new BreakNode((BreakStmt)antlrNode);
         } else if (antlrNode instanceof ContinueStmt) {
@@ -183,6 +176,10 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
             return new CaseNode((SwitchEntryStmt)antlrNode);
         } else if (antlrNode instanceof SwitchStmt) {
             return new SwitchNode((SwitchStmt) antlrNode );
+        } else if (antlrNode instanceof ThrowStmt) {
+            return new ThrowNode((ThrowStmt) antlrNode);
+        } else if (antlrNode instanceof LabeledStmt) {
+            return new LabelNode((LabeledStmt) antlrNode);
         }
         assert false;
         return null;
@@ -255,6 +252,13 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
     }
 
     @Override
+    public void visit(LabeledStmt labeledStmt, Object o) {
+        processNode(labeledStmt);
+        Statement loopBody = labeledStmt.getStmt();
+        loopBody.accept(this, o);
+    }
+
+    @Override
     public void visit(MethodCallExpr methodCallExpr, Object o) {
         processNode(methodCallExpr);
     }
@@ -280,34 +284,65 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
         Statement loopBody = tryStmt.getTryBlock();
         loopBody.accept(this, o);
         List<CatchClause> catchList = tryStmt.getCatchs();
-        for (CatchClause c : catchList) {
-            c.accept(this, o);
+        if (catchList != null) {
+            for (CatchClause c : catchList) {
+                c.accept(this, o);
+            }
+        }
+        if (tryStmt.getFinallyBlock() != null) {
+            UnwindStack(NodeType.TRY);
+            assert innerNodes.peek().getType() == NodeType.TRY;
+            innerNodes.push(((TryNode)innerNodes.peek()).getFinallyBlock());
+            currentNode = null;
+            tryStmt.getFinallyBlock().accept(this, o);
+            UnwindStack(NodeType.TRY);
+        }
+    }
+
+    private void UnwindStack(NodeType nodeType) {
+        while (innerNodes.peek().getType() != nodeType) {
+            innerNodes.pop();
         }
     }
 
     @Override
     public void visit(CatchClause catchClause, Object o) {
-        processNode(catchClause);
+        UnwindStack(NodeType.TRY);
+        CatchNode catchNode = new CatchNode(catchClause);
+        innerNodes.peek().attachInner(catchNode);
+        innerNodes.push(catchNode);
+        currentNode = null;
+
         Statement loopBody = catchClause.getCatchBlock();
         loopBody.accept(this, o);
+        UnwindStack(NodeType.TRY);
     }
 
     @Override
     public void visit(SwitchStmt switchStmt, Object o) {
         processNode(switchStmt);
         List<SwitchEntryStmt> switchEntryStmts = switchStmt.getEntries();
-        for (SwitchEntryStmt c : switchEntryStmts) {
-            c.accept(this, o);
+        if (switchEntryStmts != null) {
+            for (SwitchEntryStmt c : switchEntryStmts) {
+                c.accept(this, o);
+            }
         }
     }
 
     @Override
     public void visit(SwitchEntryStmt switchEntryStmt, Object o) {
         processNode(switchEntryStmt);
-        List<Statement> loopBody = switchEntryStmt.getStmts();
-//        for (Statement s : loopBody) {
-//            s.accept(this, o);
-//        }
+        List<Statement> statements = switchEntryStmt.getStmts();
+        if (statements != null) {
+            for (Statement s : statements) {
+                s.accept(this, o);
+            }
+        }
+    }
+
+    @Override
+    public void visit(ThrowStmt throwStmt, Object o) {
+        processNode(throwStmt);
     }
 
     @Override
@@ -336,22 +371,20 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
 
     /* Explicitly call this to attach EndNode to our model */
     public void finish() {
+        EndNode endNode = new EndNode();
         if (innerNodes.size() > 1) {
             while (innerNodes.size() != 2) {
                 innerNodes.pop();
             }
             Node top = innerNodes.pop();
-            top.setNext(new EndNode());
+            top.setNext(endNode);
         } else {
             assert currentNode != null;
-            currentNode.setNext(new EndNode());
+            currentNode.setNext(endNode);
+        }
+
+        for (ReturnNode returnNode : returnNodes) {
+            returnNode.setNext(endNode);
         }
     }
-
-//    public void secondBuild() {
-//        BlockScheme model;
-//        while (model == ) {
-//
-//        }
-//    }
 }

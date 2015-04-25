@@ -1,4 +1,4 @@
-public class TestIf2
+public class IfElseTest
 {
     public static void main(String[] args) {
         if (2 == 2) {
