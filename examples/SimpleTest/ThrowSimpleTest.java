@@ -2,8 +2,10 @@ import java.lang.Exception;
 
 public class ThrowSimpleTest {
     public static void main(String[] args) {
-        if (boolean a == true) throw Exception {
+        boolean a = true;
+        if (a == true) {
 
         }
+        throw Exception;
     }
 }

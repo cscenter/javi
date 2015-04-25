@@ -1,26 +1,17 @@
 package new_model;
 
 import com.github.antlrjavaparser.api.body.VariableDeclarator;
+import com.github.antlrjavaparser.api.body.VariableDeclaratorId;
 import com.github.antlrjavaparser.api.expr.AssignExpr;
 import com.github.antlrjavaparser.api.expr.BinaryExpr;
 import com.github.antlrjavaparser.api.expr.Expression;
 import com.github.antlrjavaparser.api.expr.MethodCallExpr;
 import com.github.antlrjavaparser.api.expr.UnaryExpr;
 import com.github.antlrjavaparser.api.expr.VariableDeclarationExpr;
-import com.github.antlrjavaparser.api.stmt.BreakStmt;
-import com.github.antlrjavaparser.api.stmt.CatchClause;
-import com.github.antlrjavaparser.api.stmt.ContinueStmt;
-import com.github.antlrjavaparser.api.stmt.ForStmt;
-import com.github.antlrjavaparser.api.stmt.ForeachStmt;
-import com.github.antlrjavaparser.api.stmt.IfStmt;
-import com.github.antlrjavaparser.api.stmt.ReturnStmt;
-import com.github.antlrjavaparser.api.stmt.Statement;
-import com.github.antlrjavaparser.api.stmt.SwitchEntryStmt;
-import com.github.antlrjavaparser.api.stmt.SwitchStmt;
-import com.github.antlrjavaparser.api.stmt.TryStmt;
-import com.github.antlrjavaparser.api.stmt.WhileStmt;
+import com.github.antlrjavaparser.api.stmt.*;
 import com.github.antlrjavaparser.api.type.Type;
 
+import javax.print.attribute.standard.Finishings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,7 +35,10 @@ enum NodeType {
     SWITCH,
     CASE,
     UNARY,
-    BINARY
+    BINARY,
+    THROW,
+    LABEL,
+    FINALLY
 }
 
 //EL: не все классы в иерархии наследования имеют nestedNode => в базовом класса attachInner не нужен
@@ -103,10 +97,23 @@ abstract class Node {
     }
 
     public boolean contains(Node n) {
-        if (this.getStartLine() < n.getStartLine() && this.getEndLine() > n.getEndLine()) {
-            return true;
+//        if (this.getStartLine() < n.getStartLine() && this.getEndLine() >= n.getEndLine()) {
+//            return true;
+//        } else {
+//            return this.getStartColumn() < n.getStartColumn() && this.getEndColumn() >= n.getEndColumn();
+//        }
+        if (getStartLine() == n.getStartLine()) {
+            if (getEndLine() == n.getEndLine()) {
+                return getStartColumn() <= n.getStartColumn() && getEndColumn() >= n.getEndColumn();
+            } else {
+                return getEndLine() > n.getEndLine();
+            }
         } else {
-            return this.getStartColumn() < n.getStartColumn() && this.getEndColumn() > n.getEndColumn();
+            if (getEndLine() == n.getEndLine()) {
+                return getStartLine() < n.getStartLine() && getEndColumn() >= n.getEndColumn();
+            } else {
+                return getStartLine() < n.getStartLine() && getEndLine() > n.getEndLine();
+            }
         }
     }
 
@@ -172,14 +179,10 @@ class IfNode extends Node {
     private Node yes;
     private Node no;
     private String condition;
-    private String body;
-    private String else_body;
 
     public IfNode(IfStmt node) {
         super(node);
         this.condition = node.getCondition().toString();
-        this.body = node.getThenStmt().toString();
-        this.else_body = node.getElseStmt().toString();
     }
 
     public Node getYes() {
@@ -204,16 +207,25 @@ class IfNode extends Node {
         for (int i = 0; i < level; ++i)
             builder.append("--");
 
-        builder.append("if {\n");
+        builder.append("if (").append(condition).append(") {\n");
         if (yes != null) {
-            builder.append(yes);
+            Node tmp = yes;
+            while (tmp != null) {
+                builder.append(tmp);
+                tmp = tmp.next;
+            }
         }
 
         if (no != null) {
-            for (int i = 0; i < level; ++i)
+            for (int i = 0; i < level; ++i) {
                 builder.append("--");
+            }
             builder.append("} else {\n");
-            builder.append(no);
+            Node tmp = no;
+            while (tmp != null) {
+                builder.append(tmp);
+                tmp = tmp.next;
+            }
         }
         for (int i = 0; i < level; ++i)
             builder.append("--");
@@ -236,7 +248,6 @@ class IfNode extends Node {
 
 class ForNode extends Node {
     private Node nestedFirst;
-    private String body;
     private String condition;
 
     public ForNode(ForStmt node) {
@@ -244,10 +255,19 @@ class ForNode extends Node {
         List<Expression> init = node.getInit();
         List<Expression> update = node.getUpdate();
         Expression compare = node.getCompare();
-        this.body = node.getBody().toString();
-        String inits = init.stream().map(Expression::toString).collect(Collectors.joining(" "));
-        String updates = update.stream().map(Expression::toString).collect(Collectors.joining(" "));
-        condition = inits + " " + compare.toString() + " " + updates;
+        String inits = "";
+        String updates = "";
+        String compares = "";
+        if (init != null) {
+            inits = init.stream().map(Expression::toString).collect(Collectors.joining(" "));
+        }
+        if (update != null) {
+            updates = update.stream().map(Expression::toString).collect(Collectors.joining(" "));
+        }
+        if (compare != null) {
+            compares = compare.toString();
+        }
+        condition = inits + " ; " + compares + " ; " + updates;
     }
 
     @Override
@@ -258,7 +278,7 @@ class ForNode extends Node {
         for (int i = 0; i < level; ++i)
             builder.append("--");
 
-        builder.append("for {\n");
+        builder.append("for (").append(condition).append(") {\n");
         while (tmp != null) {
             builder.append(tmp.toString());
             tmp = tmp.next;
@@ -285,13 +305,19 @@ class ForNode extends Node {
 
 class ForEachNode extends Node {
     private Node nestedFirst;
-    private String body;
     private String condition;
 
     public ForEachNode(ForeachStmt node) {
         super(node);
-        this.body = node.getBody().toString();
-        this.condition = node.getIterable().toString() + " " + node.getVariable().toString();
+        String iterable = "";
+        String variable = "";
+        if (node.getIterable() != null) {
+            iterable = node.getIterable().toString();
+        }
+        if (node.getVariable() != null) {
+            variable = node.getVariable().toString();
+        }
+        this.condition = variable + " : " + iterable;
     }
 
     @Override
@@ -302,7 +328,7 @@ class ForEachNode extends Node {
         for (int i = 0; i < level; ++i)
             builder.append("--");
 
-        builder.append("foreach {\n");
+        builder.append("foreach (").append(condition).append(") {\n");
         while (tmp != null) {
             builder.append(tmp.toString());
             tmp = tmp.next;
@@ -483,6 +509,46 @@ class DeclarationNode extends Node {
     }
 }
 
+class LabelNode extends Node {
+    private String label;
+    private Node nestedFirst;
+
+    public LabelNode(LabeledStmt node) {
+        super(node);
+        label = node.getLabel();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        Node tmp = nestedFirst;
+
+        for (int i = 0; i < level; ++i)
+            builder.append("--");
+        builder.append(label).append(":").append("\n");
+
+        while (tmp != null) {
+            builder.append(tmp.toString());
+            tmp = tmp.next;
+        }
+
+        return builder.toString();
+    }
+
+    @Override
+    public NodeType getType() {
+        return NodeType.LABEL;
+    }
+
+    @Override
+    public void attachInner(Node node) {
+        assert nestedFirst == null;
+        nestedFirst = node;
+        node.level = this.level + 1;
+    }
+}
+
+
 class MethodCallNode extends Node {
     private String method;
 
@@ -502,7 +568,7 @@ class MethodCallNode extends Node {
             args = arg.stream().map(Expression::toString).collect(Collectors.joining(" "));
         }
 
-        this.method = node.getScope().toString() + type + node.getName() + args;
+        this.method = node.getScope().toString() + type + "." + node.getName() + "(" + args + ")";
     }
 
     @Override
@@ -532,7 +598,7 @@ class ReturnNode extends Node{
 
     public ReturnNode(ReturnStmt node) {
         super(node);
-        this.expression = node.getExpr().toString();
+        this.expression = "return " + node.getExpr().toString();
     }
 
     @Override
@@ -541,7 +607,7 @@ class ReturnNode extends Node{
         for (int i = 0; i < level; ++i)
             builder.append("--");
 
-        builder.append("return").append(" ").append(expression);
+        builder.append(expression);
         builder.append("\n");
         return  builder.toString();
     }
@@ -557,9 +623,14 @@ class ReturnNode extends Node{
 }
 
 class BreakNode extends Node {
-
-    protected BreakNode(BreakStmt node) {
+    private String exp;
+    public BreakNode(BreakStmt node) {
         super(node);
+        String id = "";
+        if (node.getId() != null) {
+            id = node.getId();
+        }
+        this.exp = "break" + " " + id;
     }
 
     @Override
@@ -568,7 +639,7 @@ class BreakNode extends Node {
         for (int i = 0; i < level; ++i)
             builder.append("--");
 
-        builder.append("break").append("\n");
+        builder.append(exp).append("\n");
         return  builder.toString();
     }
 
@@ -584,9 +655,14 @@ class BreakNode extends Node {
 }
 
 class ContinueNode extends Node {
-
-    protected ContinueNode(ContinueStmt node) {
+    private String exp;
+    public ContinueNode(ContinueStmt node) {
         super(node);
+        String id = "";
+        if (node.getId() != null) {
+            id = node.getId();
+        }
+        this.exp = "continue" + " " + id;
     }
 
     @Override
@@ -595,7 +671,7 @@ class ContinueNode extends Node {
         for (int i = 0; i < level; ++i)
             builder.append("--");
 
-        builder.append("continue").append("\n");
+        builder.append(exp).append("\n");
         return  builder.toString();
     }
 
@@ -612,12 +688,10 @@ class ContinueNode extends Node {
 class WhileNode extends Node {
     private Node nestedFirst;
     private String condition;
-    private String body;
 
     public WhileNode(WhileStmt node) {
         super(node);
         this.condition = node.getCondition().toString();
-        this.body = node.getBody().toString();
     }
 
     @Override
@@ -655,18 +729,78 @@ class WhileNode extends Node {
 
 class TryNode extends Node{
     private Node nestedFirst;
+    private String expTry;
     ArrayList<CatchNode> catchClause = new ArrayList<CatchNode>();
-    private String bodyTry;
-    private String bodyFinally;
+
+    public FinallyNode getFinallyBlock() {
+        return finallyBlock;
+    }
+
+    private FinallyNode finallyBlock;
 
     public TryNode(TryStmt node) {
         super(node);
-        for (CatchClause c : node.getCatchs()) {
-            catchClause.add(new CatchNode(c));
+        this.expTry = "try:";
+        if (node.getFinallyBlock() != null) {
+            this.finallyBlock = new FinallyNode(node.getFinallyBlock());
+            finallyBlock.level = level + 1;
+        }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        Node tmp = this.nestedFirst;
+
+        for (int i = 0; i < level; ++i)
+            builder.append("--");
+
+        builder.append("try {\n");
+        while (tmp != null) {
+            builder.append(tmp);
+            tmp = tmp.next;
         }
 
-        bodyTry = node.getTryBlock().toString();
-        bodyFinally = node.getFinallyBlock().toString();
+        if (this.catchClause != null) {
+            for (CatchNode catchNode : catchClause) {
+                builder.append(catchNode.toString());
+            }
+        } else {
+            builder.append("} ");
+        }
+        if (this.finallyBlock != null) {
+            builder.append(finallyBlock.toString());
+        }
+
+        return builder.toString();
+    }
+
+    @Override
+    public NodeType getType() {
+        return NodeType.TRY;
+    }
+
+    @Override
+    public void attachInner(Node node) {
+        if (nestedFirst == null) {
+            nestedFirst = node;
+            node.level = this.level + 1;
+        } else {
+            assert node.getType() == NodeType.CATCH;
+            CatchNode catchNode = (CatchNode)node;
+            catchClause.add(catchNode);
+            node.level = this.level;
+        }
+    }
+}
+
+class FinallyNode extends Node {
+    private Node nestedFirst;
+    private String expFinally;
+
+    protected FinallyNode(BlockStmt node) {
+        super(node);
+        this.expFinally = "finally:";
     }
 
     @Override
@@ -677,18 +811,21 @@ class TryNode extends Node{
         for (int i = 0; i < level; ++i)
             builder.append("--");
 
-        builder.append("try {\n");
+        builder.append("} finally {\n");
         while (tmp != null) {
             builder.append(tmp.toString());
             tmp = tmp.next;
         }
 
+        for (int i = 0; i < level; ++i)
+            builder.append("--");
+        builder.append("} \n");
         return builder.toString();
     }
 
     @Override
     public NodeType getType() {
-        return NodeType.TRY;
+        return NodeType.FINALLY;
     }
 
     @Override
@@ -702,12 +839,10 @@ class TryNode extends Node{
 class CatchNode extends Node {
     private Node nestedFirst;
     private String except;
-    private String bodyCatch;
 
     public CatchNode(CatchClause node) {
         super(node);
         this.except = node.getExcept().toString();
-        this.bodyCatch = node.getCatchBlock().toString();
     }
 
     @Override
@@ -724,9 +859,6 @@ class CatchNode extends Node {
             tmp = tmp.next;
         }
 
-        for (int i = 0; i < level; ++i)
-            builder.append("--");
-        builder.append("}\n");
         return builder.toString();
     }
 
@@ -743,14 +875,40 @@ class CatchNode extends Node {
     }
 }
 
+class ThrowNode extends Node {
+    private String exp;
+
+    public ThrowNode(ThrowStmt node) {
+        super(node);
+        this.exp = "throw " + node.getExpr().toString();
+    }
+
+    @Override
+    public NodeType getType() {
+        return NodeType.THROW;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+
+        for (int i = 0; i < level; ++i)
+            builder.append("--");
+
+        builder.append(exp).append("\n");
+        return builder.toString();
+    }
+
+    @Override
+    public void attachInner(Node node) {
+    }
+}
+
 class SwitchNode extends Node {
     ArrayList<CaseNode> entries = new ArrayList<>();
     private String selector;
     public SwitchNode(SwitchStmt node) {
         super(node);
-        for (SwitchEntryStmt c : node.getEntries()) {
-            entries.add(new CaseNode(c));
-        }
         this.selector = "switch" + node.getSelector().toString();
     }
 
@@ -763,8 +921,10 @@ class SwitchNode extends Node {
 
         builder.append(selector).append(" { \n");
 
-        for (CaseNode i : entries) {
-            builder.append(i.toString());
+        CaseNode tmp = entries.get(0);
+        while (tmp != null) {
+            builder.append(tmp);
+            tmp = (CaseNode)tmp.next;
         }
 
         for (int i = 0; i < level; ++i)
@@ -780,10 +940,9 @@ class SwitchNode extends Node {
 
     @Override
     public void attachInner(Node node) {
-//        int i = 0;
-//        entries.get(i) = (CaseNode) node;
-//        i
-//        node.level = this.level + 1;
+        assert node instanceof CaseNode;
+        node.level = this.level + 1;
+        entries.add((CaseNode)node);
     }
 }
 
@@ -792,17 +951,10 @@ class CaseNode extends Node {
     private String strCase;
     public CaseNode(SwitchEntryStmt node) {
         super(node);
-        String stmt = "";
-        StringBuilder builder = new StringBuilder();
-        List<Statement> body = node.getStmts();
-//        stmt = body.stream().map(Statement::toString).collect(Collectors.joining(" "));
-//        for (Statement b : body) {
-//            builder.append(b.toString());
-//        }
         if (node.getLabel() != null) {
-            strCase = ("case " + node.getLabel().toString() + " : \n" + builder + "\n");
+            strCase = ("case " + node.getLabel().toString() + ": \n");
         } else {
-            strCase = ("default : \n" + stmt);
+            strCase = ("default: \n");
         }
     }
 
@@ -814,12 +966,12 @@ class CaseNode extends Node {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        Node tmp = nestedFirst;
 
         for (int i = 0; i < level; ++i)
             builder.append("--");
         builder.append(strCase);
 
+        Node tmp = nestedFirst;
         while (tmp != null) {
             builder.append(tmp.toString());
             tmp = tmp.next;
