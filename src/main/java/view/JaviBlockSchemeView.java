@@ -5,6 +5,7 @@ import com.mxgraph.model.mxGeometry;
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.util.mxConstants;
 import com.mxgraph.util.mxRectangle;
+import com.mxgraph.view.mxEdgeStyle;
 import com.mxgraph.view.mxGraph;
 import com.mxgraph.view.mxStylesheet;
 import new_model.*;
@@ -160,7 +161,7 @@ public class JaviBlockSchemeView extends JPanel
 
     private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ForNode node)
     {
-        Object nextVertex = vertex(graph, node.toString(), node.getType(), x, y);
+        Object nextVertex = vertex(graph, node.getCondition(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex);
 
         reversalNodes.push(new ReverseBlock(nextVertex, node));
@@ -173,7 +174,7 @@ public class JaviBlockSchemeView extends JPanel
 
     private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ForEachNode node)
     {
-        Object nextVertex = vertex(graph, node.toString(), node.getType(), x, y);
+        Object nextVertex = vertex(graph, node.getCondition(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex);
 
         reversalNodes.push(new ReverseBlock(nextVertex, node));
@@ -186,7 +187,7 @@ public class JaviBlockSchemeView extends JPanel
 
     private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, IfNode node)
     {
-        Object nextVertex = vertex(graph, node.toString(), node.getType(), x, y);
+        Object nextVertex = vertex(graph, node.getCondition(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex);
 
         reversalNodes.push(new ReverseBlock(nextVertex, node));
@@ -201,7 +202,7 @@ public class JaviBlockSchemeView extends JPanel
 
     private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, WhileNode node)
     {
-        Object nextVertex = vertex(graph, node.toString(), node.getType(), x, y);
+        Object nextVertex = vertex(graph, node.getCondition(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex);
 
         reversalNodes.push(new ReverseBlock(nextVertex, node));
@@ -214,7 +215,7 @@ public class JaviBlockSchemeView extends JPanel
 
     private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, DeclarationNode node)
     {
-        Object nextVertex = vertex(graph, node.toString(), node.getType(), x, y);
+        Object nextVertex = vertex(graph, node.getExp(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex);
         mxCell nextCell = (mxCell) nextVertex;
         if (nextCell != null) {
@@ -225,7 +226,7 @@ public class JaviBlockSchemeView extends JPanel
 
     private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, AssignNode node)
     {
-        Object nextVertex = vertex(graph, node.toString(), node.getType(), x, y);
+        Object nextVertex = vertex(graph, node.getExp(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex);
         mxCell nextCell = (mxCell) nextVertex;
         if (nextCell != null) {
@@ -236,7 +237,7 @@ public class JaviBlockSchemeView extends JPanel
 
     private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, BinaryNode node)
     {
-        Object nextVertex = vertex(graph, node.toString(), node.getType(), x, y);
+        Object nextVertex = vertex(graph, node.getExp(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex);
         mxCell nextCell = (mxCell) nextVertex;
         if (nextCell != null) {
@@ -262,7 +263,7 @@ public class JaviBlockSchemeView extends JPanel
 
     private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, MethodCallNode node)
     {
-        Object nextVertex = vertex(graph, node.toString(), node.getType(), x, y);
+        Object nextVertex = vertex(graph, node.getMethod(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex);
         mxCell nextCell = (mxCell) nextVertex;
         if (nextCell != null) {
@@ -273,7 +274,7 @@ public class JaviBlockSchemeView extends JPanel
 
     private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ReturnNode node)
     {
-        Object nextVertex = vertex(graph, node.toString(), node.getType(), x, y);
+        Object nextVertex = vertex(graph, node.getExpression(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex);
         mxCell nextCell = (mxCell) nextVertex;
         if (nextCell != null) {
@@ -299,7 +300,7 @@ public class JaviBlockSchemeView extends JPanel
 
     private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, UnaryNode node)
     {
-        Object nextVertex = vertex(graph, node.toString(), node.getType(), x, y);
+        Object nextVertex = vertex(graph, node.getExp(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex);
         mxCell nextCell = (mxCell) nextVertex;
         if (nextCell != null) {
@@ -325,9 +326,7 @@ public class JaviBlockSchemeView extends JPanel
     private void applyEdgeDefaults(mxGraph graph)
     {
         Map<String, Object> edge = new HashMap<>();
-        edge.put(mxConstants.STYLE_ROUNDED, false);
-        edge.put(mxConstants.STYLE_ORTHOGONAL, true);
-        edge.put(mxConstants.STYLE_EDGE, "elbowEdgeStyle");
+        edge.put(mxConstants.STYLE_EDGE, mxEdgeStyle.SideToSide);
         edge.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_CONNECTOR);
         edge.put(mxConstants.STYLE_ENDARROW, mxConstants.ARROW_CLASSIC);
         edge.put(mxConstants.STYLE_VERTICAL_ALIGN, mxConstants.ALIGN_MIDDLE);
