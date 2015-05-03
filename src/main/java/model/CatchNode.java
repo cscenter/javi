@@ -1,24 +1,14 @@
-package new_model;
+package model;
 
-import com.github.antlrjavaparser.api.stmt.WhileStmt;
+import com.github.antlrjavaparser.api.stmt.CatchClause;
 
-public class WhileNode extends Node {
+public class CatchNode extends Node {
     private Node nestedFirst;
-    private String condition;
+    private String except;
 
-    public WhileNode(WhileStmt node) {
+    public CatchNode(CatchClause node) {
         super(node);
-        this.condition = node.getCondition().toString();
-    }
-
-    public Node getNestedFirst()
-    {
-        return nestedFirst;
-    }
-
-    public String getCondition()
-    {
-        return condition;
+        this.except = node.getExcept().toString();
     }
 
     @Override
@@ -29,21 +19,18 @@ public class WhileNode extends Node {
         for (int i = 0; i < level; ++i)
             builder.append("--");
 
-        builder.append("while (").append(condition).append(") {\n");
+        builder.append("} catch (").append(except).append(") {\n");
         while (tmp != null) {
             builder.append(tmp.toString());
             tmp = tmp.next;
         }
 
-        for (int i = 0; i < level; ++i)
-            builder.append("--");
-        builder.append("}\n");
         return builder.toString();
     }
 
     @Override
     public NodeType getType() {
-        return NodeType.WHILE;
+        return NodeType.CATCH;
     }
 
     @Override

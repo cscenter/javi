@@ -1,4 +1,4 @@
-package new_model;
+package model;
 
 //EL: не все классы в иерархии наследования имеют nestedNode => в базовом класса attachInner не нужен
 public abstract class Node {

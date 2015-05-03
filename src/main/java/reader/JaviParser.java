@@ -5,8 +5,8 @@ import com.github.antlrjavaparser.api.CompilationUnit;
 import com.github.antlrjavaparser.api.body.BodyDeclaration;
 import com.github.antlrjavaparser.api.body.MethodDeclaration;
 import com.github.antlrjavaparser.api.body.TypeDeclaration;
-import new_model.BlockScheme;
-import new_model.BlockSchemeBuilder;
+import model.BlockScheme;
+import model.BlockSchemeBuilder;
 
 import java.io.File;
 import java.io.IOException;

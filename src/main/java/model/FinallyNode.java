@@ -1,39 +1,39 @@
-package new_model;
+package model;
 
-import com.github.antlrjavaparser.api.stmt.SwitchEntryStmt;
+import com.github.antlrjavaparser.api.stmt.BlockStmt;
 
-public class CaseNode extends Node {
+public class FinallyNode extends Node {
     private Node nestedFirst;
-    private String strCase;
-    public CaseNode(SwitchEntryStmt node) {
-        super(node);
-        if (node.getLabel() != null) {
-            strCase = ("case " + node.getLabel().toString() + ": \n");
-        } else {
-            strCase = ("default: \n");
-        }
-    }
+    private String expFinally;
 
-    @Override
-    public NodeType getType() {
-        return NodeType.CASE;
+    protected FinallyNode(BlockStmt node) {
+        super(node);
+        this.expFinally = "finally:";
     }
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
+        Node tmp = nestedFirst;
 
         for (int i = 0; i < level; ++i)
             builder.append("--");
-        builder.append(strCase);
 
-        Node tmp = nestedFirst;
+        builder.append("} finally {\n");
         while (tmp != null) {
             builder.append(tmp.toString());
             tmp = tmp.next;
         }
 
+        for (int i = 0; i < level; ++i)
+            builder.append("--");
+        builder.append("} \n");
         return builder.toString();
+    }
+
+    @Override
+    public NodeType getType() {
+        return NodeType.FINALLY;
     }
 
     @Override

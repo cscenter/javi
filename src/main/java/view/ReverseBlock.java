@@ -1,6 +1,6 @@
 package view;
 
-import new_model.Node;
+import model.Node;
 
 public class ReverseBlock
 {

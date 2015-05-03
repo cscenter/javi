@@ -1,4 +1,4 @@
-package new_model;
+package model;
 
 public class EndNode extends Node {
     public EndNode() {

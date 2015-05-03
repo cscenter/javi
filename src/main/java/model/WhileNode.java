@@ -1,14 +1,24 @@
-package new_model;
+package model;
 
-import com.github.antlrjavaparser.api.stmt.BlockStmt;
+import com.github.antlrjavaparser.api.stmt.WhileStmt;
 
-public class FinallyNode extends Node {
+public class WhileNode extends Node {
     private Node nestedFirst;
-    private String expFinally;
+    private String condition;
 
-    protected FinallyNode(BlockStmt node) {
+    public WhileNode(WhileStmt node) {
         super(node);
-        this.expFinally = "finally:";
+        this.condition = node.getCondition().toString();
+    }
+
+    public Node getNestedFirst()
+    {
+        return nestedFirst;
+    }
+
+    public String getCondition()
+    {
+        return condition;
     }
 
     @Override
@@ -19,7 +29,7 @@ public class FinallyNode extends Node {
         for (int i = 0; i < level; ++i)
             builder.append("--");
 
-        builder.append("} finally {\n");
+        builder.append("while (").append(condition).append(") {\n");
         while (tmp != null) {
             builder.append(tmp.toString());
             tmp = tmp.next;
@@ -27,13 +37,13 @@ public class FinallyNode extends Node {
 
         for (int i = 0; i < level; ++i)
             builder.append("--");
-        builder.append("} \n");
+        builder.append("}\n");
         return builder.toString();
     }
 
     @Override
     public NodeType getType() {
-        return NodeType.FINALLY;
+        return NodeType.WHILE;
     }
 
     @Override

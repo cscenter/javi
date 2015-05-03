@@ -1,9 +1,8 @@
-package new_model;
+package model;
 
 import com.github.antlrjavaparser.api.Comment;
 import com.github.antlrjavaparser.api.body.CatchParameter;
 import com.github.antlrjavaparser.api.body.Resource;
-import com.github.antlrjavaparser.api.body.VariableDeclaratorId;
 import com.github.antlrjavaparser.api.expr.AssignExpr;
 import com.github.antlrjavaparser.api.expr.BinaryExpr;
 import com.github.antlrjavaparser.api.expr.LambdaExpr;

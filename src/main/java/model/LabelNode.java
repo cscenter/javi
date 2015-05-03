@@ -1,14 +1,14 @@
-package new_model;
+package model;
 
-import com.github.antlrjavaparser.api.stmt.CatchClause;
+import com.github.antlrjavaparser.api.stmt.LabeledStmt;
 
-public class CatchNode extends Node {
+public class LabelNode extends Node {
+    private String label;
     private Node nestedFirst;
-    private String except;
 
-    public CatchNode(CatchClause node) {
+    public LabelNode(LabeledStmt node) {
         super(node);
-        this.except = node.getExcept().toString();
+        label = node.getLabel();
     }
 
     @Override
@@ -18,8 +18,8 @@ public class CatchNode extends Node {
 
         for (int i = 0; i < level; ++i)
             builder.append("--");
+        builder.append(label).append(":").append("\n");
 
-        builder.append("} catch (").append(except).append(") {\n");
         while (tmp != null) {
             builder.append(tmp.toString());
             tmp = tmp.next;
@@ -30,7 +30,7 @@ public class CatchNode extends Node {
 
     @Override
     public NodeType getType() {
-        return NodeType.CATCH;
+        return NodeType.LABEL;
     }
 
     @Override

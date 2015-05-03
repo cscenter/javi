@@ -1,4 +1,4 @@
-package new_model;
+package model;
 
 import com.github.antlrjavaparser.api.expr.Expression;
 import com.github.antlrjavaparser.api.expr.MethodCallExpr;

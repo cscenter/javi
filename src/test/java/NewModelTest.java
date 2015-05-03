@@ -1,4 +1,4 @@
-import new_model.ModelTest;
+import model.ModelTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

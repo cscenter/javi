@@ -1,4 +1,4 @@
-package new_model;
+package model;
 import com.github.antlrjavaparser.JavaParser;
 import com.github.antlrjavaparser.api.CompilationUnit;
 import com.github.antlrjavaparser.api.body.BodyDeclaration;

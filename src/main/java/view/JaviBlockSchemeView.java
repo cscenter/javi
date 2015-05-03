@@ -8,7 +8,7 @@ import com.mxgraph.util.mxRectangle;
 import com.mxgraph.view.mxEdgeStyle;
 import com.mxgraph.view.mxGraph;
 import com.mxgraph.view.mxStylesheet;
-import new_model.*;
+import model.*;
 
 import javax.swing.*;
 import java.util.HashMap;
