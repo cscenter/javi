@@ -21,7 +21,8 @@ public class JaviBlockSchemeView extends JPanel
         JaviBlockSchemeEdgeStyleBottomTop,
         JaviBlockSchemeEdgeStyleRightRight,
         JaviBlockSchemeEdgeStyleRightTop,
-        JaviBlockSchemeEdgeStyleLeftTop
+        JaviBlockSchemeEdgeStyleLeftTop,
+        JaviBlockSchemeEdgeStyleRightLeft
     }
 
     private BlockScheme scheme;
@@ -62,7 +63,7 @@ public class JaviBlockSchemeView extends JPanel
             mxCell startCell = (mxCell) startVertex;
             if (startCell != null) {
                 double vertexHeight = startCell.getGeometry().getHeight();
-                constructGraph(graph, startVertex, reversalNodes, initialX, initialY + vertexHeight + defaultDistance, startNode.getNext());
+                constructGraph(graph, startVertex, reversalNodes, initialX, initialY + vertexHeight + defaultDistance, startNode.getNext(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop);
             }
         }
         finally
@@ -79,7 +80,7 @@ public class JaviBlockSchemeView extends JPanel
         return graph;
     }
 
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, Node node)
+    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, Node node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
         if (node == null) {
             if (!reversalNodes.empty()) {
@@ -87,7 +88,7 @@ public class JaviBlockSchemeView extends JPanel
                 graph.insertEdge(graph.getDefaultParent(), null, null, blockVertex, reverseBlock.getBlockVertex(), edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleRightRight));
                 if (reverseBlock.shouldGoToNext(y)) {
                     reversalNodes.pop();
-                    constructGraph(graph, reverseBlock.getBlockVertex(), reversalNodes, x, reverseBlock.getBlockY(), reverseBlock.getNextBlock());
+                    constructGraph(graph, reverseBlock.getBlockVertex(), reversalNodes, x, reverseBlock.getBlockY(), reverseBlock.getNextBlock(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleLeftLeft);
                 }
             }
         }
@@ -97,77 +98,77 @@ public class JaviBlockSchemeView extends JPanel
                 graph.insertEdge(graph.getDefaultParent(), null, null, blockVertex, reverseBlock.getBlockVertex(), edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleRightRight));
                 if (reverseBlock.shouldGoToNext(y)) {
                     reversalNodes.pop();
-                    constructGraph(graph, reverseBlock.getBlockVertex(), reversalNodes, x, reverseBlock.getBlockY(), reverseBlock.getNextBlock());
+                    constructGraph(graph, reverseBlock.getBlockVertex(), reversalNodes, x, reverseBlock.getBlockY(), reverseBlock.getNextBlock(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleLeftLeft);
                 }
             }
-            constructGraph(graph, blockVertex, reversalNodes, x, y, (EndNode)node);
+            endVertex(graph, blockVertex, reversalNodes, x, y, (EndNode)node, edgeStyle);
         }
         else if (node instanceof ForNode) {
             ForNode forNode = (ForNode)node;
-            Object nextVertex = forVertex(graph, blockVertex, reversalNodes, x, y, forNode);
+            Object nextVertex = forVertex(graph, blockVertex, reversalNodes, x, y, forNode, edgeStyle);
             mxCell nextCell = (mxCell) nextVertex;
             if (nextCell != null) {
                 double vertexHeight = nextCell.getGeometry().getHeight();
-                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, forNode.getNestedFirst());
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, forNode.getNestedFirst(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop);
             }
         }
         else if (node instanceof ForEachNode) {
             ForEachNode forEachNode = (ForEachNode)node;
-            Object nextVertex = foreachVertex(graph, blockVertex, reversalNodes, x, y, forEachNode);
+            Object nextVertex = foreachVertex(graph, blockVertex, reversalNodes, x, y, forEachNode, edgeStyle);
             mxCell nextCell = (mxCell) nextVertex;
             if (nextCell != null) {
                 double vertexHeight = nextCell.getGeometry().getHeight();
-                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, forEachNode.getNestedFirst());
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, forEachNode.getNestedFirst(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop);
             }
         }
         else if (node instanceof IfNode) {
             IfNode ifNode = (IfNode)node;
-            Object nextVertex = ifVertex(graph, blockVertex, reversalNodes, x, y, ifNode);
+            Object nextVertex = ifVertex(graph, blockVertex, reversalNodes, x, y, ifNode, edgeStyle);
             mxCell nextCell = (mxCell) nextVertex;
             if (nextCell != null) {
                 double vertexWidth = nextCell.getGeometry().getWidth();
                 double vertexHeight = nextCell.getGeometry().getHeight();
-                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, ifNode.getYes());
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, ifNode.getYes(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop);
                 if (ifNode.getNo() != null) {
-                    constructGraph(graph, nextVertex, reversalNodes, x + vertexWidth + defaultDistance, y, ifNode.getNo());
+                    constructGraph(graph, nextVertex, reversalNodes, x + vertexWidth + defaultDistance, y, ifNode.getNo(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleRightLeft);
                 }
             }
         }
         else if (node instanceof WhileNode) {
             WhileNode whileNode = (WhileNode)node;
-            Object nextVertex = whileVertex(graph, blockVertex, reversalNodes, x, y, whileNode);
+            Object nextVertex = whileVertex(graph, blockVertex, reversalNodes, x, y, whileNode, edgeStyle);
 
             mxCell nextCell = (mxCell) nextVertex;
             if (nextCell != null) {
                 double vertexHeight = nextCell.getGeometry().getHeight();
-                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, whileNode.getNestedFirst());
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, whileNode.getNestedFirst(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop);
             }
         }
         else if (node instanceof DeclarationNode) {
             DeclarationNode declarationNode = (DeclarationNode)node;
-            Object nextVertex = declarationVertex(graph, blockVertex, reversalNodes, x, y, declarationNode);
+            Object nextVertex = declarationVertex(graph, blockVertex, reversalNodes, x, y, declarationNode, edgeStyle);
             mxCell nextCell = (mxCell) nextVertex;
             if (nextCell != null) {
                 double vertexHeight = nextCell.getGeometry().getHeight();
-                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, declarationNode.getNext());
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, declarationNode.getNext(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop);
             }
         }
         else if (node instanceof AssignNode) {
             AssignNode assignNode = (AssignNode)node;
-            Object nextVertex = assignVertex(graph, blockVertex, reversalNodes, x, y, assignNode);
+            Object nextVertex = assignVertex(graph, blockVertex, reversalNodes, x, y, assignNode, edgeStyle);
             mxCell nextCell = (mxCell) nextVertex;
             if (nextCell != null) {
                 double vertexHeight = nextCell.getGeometry().getHeight();
-                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, assignNode.getNext());
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, assignNode.getNext(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop);
             }
         }
         else if (node instanceof BinaryNode) {
             BinaryNode binaryNode = (BinaryNode)node;
-            Object nextVertex = binaryVertex(graph, blockVertex, reversalNodes, x, y, binaryNode);
+            Object nextVertex = binaryVertex(graph, blockVertex, reversalNodes, x, y, binaryNode, edgeStyle);
             mxCell nextCell = (mxCell) nextVertex;
             if (nextCell != null) {
                 double vertexHeight = nextCell.getGeometry().getHeight();
-                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, binaryNode.getNext());
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, binaryNode.getNext(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop);
             }
         }
         else if (node instanceof BreakNode) {
@@ -178,20 +179,20 @@ public class JaviBlockSchemeView extends JPanel
         }
         else if (node instanceof MethodCallNode) {
             MethodCallNode methodCallNode = (MethodCallNode)node;
-            Object nextVertex = methodCallVertex(graph, blockVertex, reversalNodes, x, y, methodCallNode);
+            Object nextVertex = methodCallVertex(graph, blockVertex, reversalNodes, x, y, methodCallNode, edgeStyle);
             mxCell nextCell = (mxCell) nextVertex;
             if (nextCell != null) {
                 double vertexHeight = nextCell.getGeometry().getHeight();
-                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, methodCallNode.getNext());
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, methodCallNode.getNext(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop);
             }
         }
         else if (node instanceof ReturnNode) {
             ReturnNode returnNode = (ReturnNode)node;
-            Object nextVertex = returnVertex(graph, blockVertex, reversalNodes, x, y, returnNode);
+            Object nextVertex = returnVertex(graph, blockVertex, reversalNodes, x, y, returnNode, edgeStyle);
             mxCell nextCell = (mxCell) nextVertex;
             if (nextCell != null) {
                 double vertexHeight = nextCell.getGeometry().getHeight();
-                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, returnNode.getNext());
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, returnNode.getNext(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop);
             }
         }
         else if (node instanceof SwitchNode) {
@@ -202,75 +203,75 @@ public class JaviBlockSchemeView extends JPanel
         }
         else if (node instanceof UnaryNode) {
             UnaryNode unaryNode = (UnaryNode)node;
-            Object nextVertex = unaryVertex(graph, blockVertex, reversalNodes, x, y, unaryNode);
+            Object nextVertex = unaryVertex(graph, blockVertex, reversalNodes, x, y, unaryNode, edgeStyle);
             mxCell nextCell = (mxCell) nextVertex;
             if (nextCell != null) {
                 double vertexHeight = nextCell.getGeometry().getHeight();
-                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, unaryNode.getNext());
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, unaryNode.getNext(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop);
             }
         }
     }
 
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, EndNode node)
+    private void endVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, EndNode node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
         Object nextVertex = vertex(graph, node.toString(), node.getType(), x, y);
-        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleLeftLeft));
+        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(edgeStyle));
     }
 
-    private Object forVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ForNode node)
+    private Object forVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ForNode node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
         Object nextVertex = vertex(graph, node.getCondition(), node.getType(), x, y);
-        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleLeftLeft));
+        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(edgeStyle));
         reversalNodes.push(new ReverseBlock(nextVertex, node, 1));
 
         return nextVertex;
     }
 
-    private Object foreachVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ForEachNode node)
+    private Object foreachVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ForEachNode node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
         Object nextVertex = vertex(graph, node.getCondition(), node.getType(), x, y);
-        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
+        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(edgeStyle));
         reversalNodes.push(new ReverseBlock(nextVertex, node, 1));
 
         return nextVertex;
     }
 
-    private Object ifVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, IfNode node)
+    private Object ifVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, IfNode node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
         Object nextVertex = vertex(graph, node.getCondition(), node.getType(), x, y);
-        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
+        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(edgeStyle));
         reversalNodes.push(new ReverseBlock(nextVertex, node, (node.getNo() != null ? 2 : 1)));
 
         return nextVertex;
     }
 
-    private Object whileVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, WhileNode node)
+    private Object whileVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, WhileNode node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
         Object nextVertex = vertex(graph, node.getCondition(), node.getType(), x, y);
-        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
+        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(edgeStyle));
         reversalNodes.push(new ReverseBlock(nextVertex, node, 1));
 
         return nextVertex;
     }
 
-    private Object declarationVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, DeclarationNode node)
+    private Object declarationVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, DeclarationNode node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
         Object nextVertex = vertex(graph, node.getExp(), node.getType(), x, y);
-        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleLeftLeft));
+        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(edgeStyle));
         return nextVertex;
     }
 
-    private Object assignVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, AssignNode node)
+    private Object assignVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, AssignNode node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
         Object nextVertex = vertex(graph, node.getExp(), node.getType(), x, y);
-        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleLeftLeft));
+        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(edgeStyle));
         return nextVertex;
     }
 
-    private Object binaryVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, BinaryNode node)
+    private Object binaryVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, BinaryNode node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
         Object nextVertex = vertex(graph, node.getExp(), node.getType(), x, y);
-        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
+        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(edgeStyle));
         return nextVertex;
     }
 
@@ -289,17 +290,17 @@ public class JaviBlockSchemeView extends JPanel
         return null;
     }
 
-    private Object methodCallVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, MethodCallNode node)
+    private Object methodCallVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, MethodCallNode node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
         Object nextVertex = vertex(graph, node.getMethod(), node.getType(), x, y);
-        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
+        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(edgeStyle));
         return nextVertex;
     }
 
-    private Object returnVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ReturnNode node)
+    private Object returnVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ReturnNode node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
         Object nextVertex = vertex(graph, node.getExpression(), node.getType(), x, y);
-        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
+        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(edgeStyle));
         return nextVertex;
     }
 
@@ -318,10 +319,10 @@ public class JaviBlockSchemeView extends JPanel
         return null;
     }
 
-    private Object unaryVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, UnaryNode node)
+    private Object unaryVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, UnaryNode node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
         Object nextVertex = vertex(graph, node.getExp(), node.getType(), x, y);
-        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
+        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(edgeStyle));
         return nextVertex;
     }
 
@@ -333,7 +334,7 @@ public class JaviBlockSchemeView extends JPanel
             mxCell cell = (mxCell)blockVertex;
             mxGeometry g = (mxGeometry) cell.getGeometry().clone();
             g.setHeight(g.getHeight() + 20);
-            double defaultWidth = 150.0;
+            double defaultWidth = 250.0;
             g.setWidth(defaultWidth);
             graph.cellsResized(new Object[] {cell}, new mxRectangle[] {g});
         }
@@ -349,6 +350,7 @@ public class JaviBlockSchemeView extends JPanel
         constructEdgeStyle("0.5", "0", "0", "0.5", "left-top", JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleLeftTop, graph);
         constructEdgeStyle("1", "0.5", "1", "0.5", "right-right", JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleRightRight, graph);
         constructEdgeStyle("0.5", "0", "1", "0.5", "right-top", JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleRightTop, graph);
+        constructEdgeStyle("0", "0.5", "1", "0.5", "right-left", JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleRightTop, graph);
     }
 
     private void constructVertexStyles(mxGraph graph)
