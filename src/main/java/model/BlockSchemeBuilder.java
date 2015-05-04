@@ -10,20 +10,40 @@ import com.github.antlrjavaparser.api.expr.MethodCallExpr;
 import com.github.antlrjavaparser.api.expr.MethodReferenceExpr;
 import com.github.antlrjavaparser.api.expr.UnaryExpr;
 import com.github.antlrjavaparser.api.expr.VariableDeclarationExpr;
-import com.github.antlrjavaparser.api.stmt.*;
+import com.github.antlrjavaparser.api.stmt.BreakStmt;
+import com.github.antlrjavaparser.api.stmt.CatchClause;
+import com.github.antlrjavaparser.api.stmt.ContinueStmt;
+import com.github.antlrjavaparser.api.stmt.DoStmt;
+import com.github.antlrjavaparser.api.stmt.ForStmt;
+import com.github.antlrjavaparser.api.stmt.ForeachStmt;
+import com.github.antlrjavaparser.api.stmt.IfStmt;
+import com.github.antlrjavaparser.api.stmt.LabeledStmt;
+import com.github.antlrjavaparser.api.stmt.ReturnStmt;
+import com.github.antlrjavaparser.api.stmt.Statement;
+import com.github.antlrjavaparser.api.stmt.SwitchEntryStmt;
+import com.github.antlrjavaparser.api.stmt.SwitchStmt;
+import com.github.antlrjavaparser.api.stmt.ThrowStmt;
+import com.github.antlrjavaparser.api.stmt.TryStmt;
+import com.github.antlrjavaparser.api.stmt.WhileStmt;
 import com.github.antlrjavaparser.api.visitor.VoidVisitorAdapter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 
 
 public class BlockSchemeBuilder extends VoidVisitorAdapter {
     private BlockScheme scheme;
     private Stack<Node> innerNodes = new Stack<>();
+    private Stack<Node> loopStack = new Stack<>();
     private Node currentNode;
     private boolean processingElseBranch = false;
     private ArrayList<ReturnNode> returnNodes = new ArrayList<>();
+    private Map<String, LabelNode> labels = new HashMap<>();
+    private Map<BreakNode, Node> breaks = new HashMap<>();
 
     public BlockSchemeBuilder(BlockScheme blockScheme) {
         scheme = blockScheme;
@@ -48,6 +68,12 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
         return false;
     }
 
+    private boolean isLoop(Node node) {
+        return node.getType() == NodeType.FOR
+                || node.getType() == NodeType.FOREACH
+                || node.getType() == NodeType.WHILE;
+    }
+
     //EL: лучше сделать более короткие имена типов
     private void processNode(com.github.antlrjavaparser.api.Node antlrNode) {
         /*
@@ -60,8 +86,19 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
         assert !innerNodes.empty();
 
         Node node = createMyNodeFromAntlrNode(antlrNode);
-        Node prevNode = innerNodes.peek();
+        if (isLoop(node)) {
+            loopStack.push(node);
+        }
+        if (!loopStack.empty()) {
+            while (!loopStack.peek().contains(node)) {
+                loopStack.pop();
+                if (loopStack.empty()) {
+                    break;
+                }
+            }
+        }
 
+        Node prevNode = innerNodes.peek();
 
         // special case else branch
         if (processingElseBranch) {
@@ -87,6 +124,24 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
         if (prevNode.contains(node)) {
             currentNode.setNext(node);
             node.level = currentNode.level;
+
+            if (node.getType() == NodeType.CONTINUE) {
+                ContinueNode continueNode = (ContinueNode) node;
+                if (continueNode.getLabel() == null) {
+                    node.setNext(loopStack.peek());
+                } else {
+                    node.setNext(labels.get(continueNode.getLabel()));
+                }
+            }
+            if (node.getType() == NodeType.BREAK) {
+                BreakNode breakNode = (BreakNode) node;
+                if (breakNode.getLabel() == null) {
+                    breaks.put(breakNode, loopStack.peek());
+                } else {
+                    breaks.put(breakNode, labels.get(breakNode.getLabel()));
+                }
+            }
+
             if (isBranchingNode(node)) {
                 innerNodes.add(node);
                 currentNode = null;
@@ -178,12 +233,13 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
         } else if (antlrNode instanceof ThrowStmt) {
             return new ThrowNode((ThrowStmt) antlrNode);
         } else if (antlrNode instanceof LabeledStmt) {
-            return new LabelNode((LabeledStmt) antlrNode);
+            LabelNode n = new LabelNode((LabeledStmt) antlrNode);
+            labels.put(n.getLabel(), n);
+            return n;
         }
         assert false;
         return null;
     }
-
 
     @Override
     public void visit(IfStmt ifStmt, Object o) {
@@ -275,6 +331,9 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
     @Override
     public void visit(ContinueStmt continueStmt, Object o) {
         processNode(continueStmt);
+        if (continueStmt.getId() == null) {
+
+        }
     }
 
     @Override
@@ -289,16 +348,16 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
             }
         }
         if (tryStmt.getFinallyBlock() != null) {
-            UnwindStack(NodeType.TRY);
+            unwindStack(NodeType.TRY);
             assert innerNodes.peek().getType() == NodeType.TRY;
             innerNodes.push(((TryNode)innerNodes.peek()).getFinallyBlock());
             currentNode = null;
             tryStmt.getFinallyBlock().accept(this, o);
-            UnwindStack(NodeType.TRY);
+            unwindStack(NodeType.TRY);
         }
     }
 
-    private void UnwindStack(NodeType nodeType) {
+    private void unwindStack(NodeType nodeType) {
         while (innerNodes.peek().getType() != nodeType) {
             innerNodes.pop();
         }
@@ -306,7 +365,7 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
 
     @Override
     public void visit(CatchClause catchClause, Object o) {
-        UnwindStack(NodeType.TRY);
+        unwindStack(NodeType.TRY);
         CatchNode catchNode = new CatchNode(catchClause);
         innerNodes.peek().attachInner(catchNode);
         innerNodes.push(catchNode);
@@ -314,7 +373,7 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
 
         Statement loopBody = catchClause.getCatchBlock();
         loopBody.accept(this, o);
-        UnwindStack(NodeType.TRY);
+        unwindStack(NodeType.TRY);
     }
 
     @Override
@@ -378,12 +437,20 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
             Node top = innerNodes.pop();
             top.setNext(endNode);
         } else {
-            assert currentNode != null;
-            currentNode.setNext(endNode);
+            if (currentNode != null) {
+                currentNode.setNext(endNode);
+            }
         }
 
         for (ReturnNode returnNode : returnNodes) {
             returnNode.setNext(endNode);
         }
+
+        Set<BreakNode> keys = breaks.keySet();
+        for (BreakNode key : keys) {
+            Node n = breaks.get(key);
+            key.setNext(n.getNext());
+        }
+
     }
 }

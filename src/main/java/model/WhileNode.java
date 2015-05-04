@@ -30,7 +30,7 @@ public class WhileNode extends Node {
             builder.append("--");
 
         builder.append("while (").append(condition).append(") {\n");
-        while (tmp != null) {
+        while (tmp != null && tmp != this) {
             builder.append(tmp.toString());
             tmp = tmp.next;
         }

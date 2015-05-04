@@ -6,6 +6,10 @@ public class LabelNode extends Node {
     private String label;
     private Node nestedFirst;
 
+    public String getLabel() {
+        return label;
+    }
+
     public LabelNode(LabeledStmt node) {
         super(node);
         label = node.getLabel();
@@ -20,12 +24,18 @@ public class LabelNode extends Node {
             builder.append("--");
         builder.append(label).append(":").append("\n");
 
-        while (tmp != null) {
+        while (tmp != null && tmp != this) {
             builder.append(tmp.toString());
             tmp = tmp.next;
         }
 
         return builder.toString();
+    }
+
+    @Override
+    public void setNext(Node node) {
+        super.setNext(node);
+        nestedFirst.setNext(node);
     }
 
     @Override

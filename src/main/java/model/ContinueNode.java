@@ -4,13 +4,20 @@ import com.github.antlrjavaparser.api.stmt.ContinueStmt;
 
 public class ContinueNode extends Node {
     private String exp;
+    private String label;
+
+    public String getExp() {
+        return exp;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
     public ContinueNode(ContinueStmt node) {
         super(node);
-        String id = "";
-        if (node.getId() != null) {
-            id = node.getId();
-        }
-        this.exp = "continue" + " " + id;
+        label = node.getId();
+        this.exp = "continue " + (label == null ? "" : label);
     }
 
     @Override
