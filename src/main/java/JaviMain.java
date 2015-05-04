@@ -52,7 +52,7 @@ public class JaviMain
 		main_.accept(visitor, null);
 		visitor.finish();
 
-		System.out.println(blockScheme);     		
+	//	System.out.println(blockScheme);     		
 
     }
 

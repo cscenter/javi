@@ -4,13 +4,20 @@ import com.github.antlrjavaparser.api.stmt.BreakStmt;
 
 public class BreakNode extends Node {
     private String exp;
+    private String label;
+
+    public String getLabel() {
+        return label;
+    }
+
+    public String getExp() {
+        return exp;
+    }
+
     public BreakNode(BreakStmt node) {
         super(node);
-        String id = "";
-        if (node.getId() != null) {
-            id = node.getId();
-        }
-        this.exp = "break" + " " + id;
+        label = node.getId();
+        this.exp = "break " + (label == null ? "" : label);
     }
 
     @Override
