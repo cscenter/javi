@@ -93,6 +93,9 @@ public class JaviBlockSchemeView extends JPanel
                 if (reverseBlock.getBlockNeedReverseLink()) {
                     graph.insertEdge(graph.getDefaultParent(), null, null, blockVertex, reverseBlock.getBlockVertex(), edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleRightRight));
                 }
+                else {
+                    toEndVertex.add(blockVertex);
+                }
                 if (reverseBlock.shouldGoToNext(y)) {
                     reversalNodes.pop();
                     constructGraph(graph, reverseBlock.getBlockVertex(), reversalNodes, x, reverseBlock.getBlockY(), reverseBlock.getNextBlock(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleLeftLeft);
