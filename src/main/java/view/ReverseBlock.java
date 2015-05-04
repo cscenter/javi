@@ -8,13 +8,15 @@ public class ReverseBlock
     private Node blockNode;
     private int blockCount;
     private double blockY;
+    private boolean blockNeedReverseLink;
 
-    ReverseBlock(Object vertex, Node node, int count)
+    ReverseBlock(Object vertex, Node node, int count, boolean needReverseLink)
     {
         this.blockVertex = vertex;
         this.blockNode = node;
         this.blockCount = count;
         this.blockY = 0;
+        this.blockNeedReverseLink = needReverseLink;
     }
 
     Node getNextBlock()
@@ -39,5 +41,10 @@ public class ReverseBlock
     double getBlockY()
     {
         return blockY;
+    }
+
+    boolean getBlockNeedReverseLink()
+    {
+        return blockNeedReverseLink;
     }
 }
