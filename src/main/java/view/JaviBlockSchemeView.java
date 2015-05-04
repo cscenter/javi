@@ -88,9 +88,12 @@ public class JaviBlockSchemeView extends JPanel
     {
         if (node == null) {
             if (!reversalNodes.empty()) {
-                ReverseBlock reverseBlock = reversalNodes.pop();
+                ReverseBlock reverseBlock = reversalNodes.peek();
                 graph.insertEdge(graph.getDefaultParent(), null, null, blockVertex, reverseBlock.getBlockVertex(), edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleRightRight));
-                constructGraph(graph, reverseBlock.getBlockVertex(), reversalNodes, x, y, reverseBlock.getNextBlock());
+                if (reverseBlock.shouldGoToNext(y)) {
+                    reversalNodes.pop();
+                    constructGraph(graph, reverseBlock.getBlockVertex(), reversalNodes, x, reverseBlock.getBlockY(), reverseBlock.getNextBlock());
+                }
             }
         }
         else if (node instanceof StartNode) {
@@ -171,7 +174,7 @@ public class JaviBlockSchemeView extends JPanel
         Object nextVertex = vertex(graph, node.getCondition(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
 
-        reversalNodes.push(new ReverseBlock(nextVertex, node));
+        reversalNodes.push(new ReverseBlock(nextVertex, node, 1));
         mxCell nextCell = (mxCell) nextVertex;
         if (nextCell != null) {
             double vertexHeight = nextCell.getGeometry().getHeight();
@@ -184,7 +187,7 @@ public class JaviBlockSchemeView extends JPanel
         Object nextVertex = vertex(graph, node.getCondition(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
 
-        reversalNodes.push(new ReverseBlock(nextVertex, node));
+        reversalNodes.push(new ReverseBlock(nextVertex, node, 1));
         mxCell nextCell = (mxCell) nextVertex;
         if (nextCell != null) {
             double vertexHeight = nextCell.getGeometry().getHeight();
@@ -197,7 +200,7 @@ public class JaviBlockSchemeView extends JPanel
         Object nextVertex = vertex(graph, node.getCondition(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
 
-        reversalNodes.push(new ReverseBlock(nextVertex, node));
+        reversalNodes.push(new ReverseBlock(nextVertex, node, (node.getNo() != null ? 2 : 1)));
         mxCell nextCell = (mxCell) nextVertex;
         if (nextCell != null) {
             double vertexWidth = nextCell.getGeometry().getWidth();
@@ -212,7 +215,7 @@ public class JaviBlockSchemeView extends JPanel
         Object nextVertex = vertex(graph, node.getCondition(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
 
-        reversalNodes.push(new ReverseBlock(nextVertex, node));
+        reversalNodes.push(new ReverseBlock(nextVertex, node, 1));
         mxCell nextCell = (mxCell) nextVertex;
         if (nextCell != null) {
             double vertexHeight = nextCell.getGeometry().getHeight();
