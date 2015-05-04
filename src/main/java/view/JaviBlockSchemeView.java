@@ -33,11 +33,6 @@ public class JaviBlockSchemeView extends JPanel
     private static double initialY = 10.0;
     private static double defaultDistance = 60.0;
 
-    public JaviBlockSchemeView(BlockScheme scheme)
-    {
-        this.scheme = scheme;
-    }
-
     public JaviBlockSchemeView()
     {
         this.scheme = new BlockScheme();
@@ -96,70 +91,123 @@ public class JaviBlockSchemeView extends JPanel
                 }
             }
         }
-        else if (node instanceof StartNode) {
-            constructGraph(graph, blockVertex, reversalNodes, x, y, (StartNode)node);
-        }
         else if (node instanceof EndNode) {
+            if (!reversalNodes.empty()) {
+                ReverseBlock reverseBlock = reversalNodes.peek();
+                graph.insertEdge(graph.getDefaultParent(), null, null, blockVertex, reverseBlock.getBlockVertex(), edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleRightRight));
+                if (reverseBlock.shouldGoToNext(y)) {
+                    reversalNodes.pop();
+                    constructGraph(graph, reverseBlock.getBlockVertex(), reversalNodes, x, reverseBlock.getBlockY(), reverseBlock.getNextBlock());
+                }
+            }
             constructGraph(graph, blockVertex, reversalNodes, x, y, (EndNode)node);
         }
         else if (node instanceof ForNode) {
-            constructGraph(graph, blockVertex, reversalNodes, x, y, (ForNode)node);
+            ForNode forNode = (ForNode)node;
+            Object nextVertex = forVertex(graph, blockVertex, reversalNodes, x, y, forNode);
+            mxCell nextCell = (mxCell) nextVertex;
+            if (nextCell != null) {
+                double vertexHeight = nextCell.getGeometry().getHeight();
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, forNode.getNestedFirst());
+            }
         }
         else if (node instanceof ForEachNode) {
-            constructGraph(graph, blockVertex, reversalNodes, x, y, (ForEachNode)node);
+            ForEachNode forEachNode = (ForEachNode)node;
+            Object nextVertex = foreachVertex(graph, blockVertex, reversalNodes, x, y, forEachNode);
+            mxCell nextCell = (mxCell) nextVertex;
+            if (nextCell != null) {
+                double vertexHeight = nextCell.getGeometry().getHeight();
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, forEachNode.getNestedFirst());
+            }
         }
         else if (node instanceof IfNode) {
-            constructGraph(graph, blockVertex, reversalNodes, x, y, (IfNode)node);
+            IfNode ifNode = (IfNode)node;
+            Object nextVertex = ifVertex(graph, blockVertex, reversalNodes, x, y, ifNode);
+            mxCell nextCell = (mxCell) nextVertex;
+            if (nextCell != null) {
+                double vertexWidth = nextCell.getGeometry().getWidth();
+                double vertexHeight = nextCell.getGeometry().getHeight();
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, ifNode.getYes());
+                if (ifNode.getNo() != null) {
+                    constructGraph(graph, nextVertex, reversalNodes, x + vertexWidth + defaultDistance, y, ifNode.getNo());
+                }
+            }
         }
         else if (node instanceof WhileNode) {
-            constructGraph(graph, blockVertex, reversalNodes, x, y, (WhileNode)node);
+            WhileNode whileNode = (WhileNode)node;
+            Object nextVertex = whileVertex(graph, blockVertex, reversalNodes, x, y, whileNode);
+
+            mxCell nextCell = (mxCell) nextVertex;
+            if (nextCell != null) {
+                double vertexHeight = nextCell.getGeometry().getHeight();
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, whileNode.getNestedFirst());
+            }
         }
         else if (node instanceof DeclarationNode) {
-            constructGraph(graph, blockVertex, reversalNodes, x, y, (DeclarationNode)node);
+            DeclarationNode declarationNode = (DeclarationNode)node;
+            Object nextVertex = declarationVertex(graph, blockVertex, reversalNodes, x, y, declarationNode);
+            mxCell nextCell = (mxCell) nextVertex;
+            if (nextCell != null) {
+                double vertexHeight = nextCell.getGeometry().getHeight();
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, declarationNode.getNext());
+            }
         }
         else if (node instanceof AssignNode) {
-            constructGraph(graph, blockVertex, reversalNodes, x, y, (AssignNode)node);
+            AssignNode assignNode = (AssignNode)node;
+            Object nextVertex = assignVertex(graph, blockVertex, reversalNodes, x, y, assignNode);
+            mxCell nextCell = (mxCell) nextVertex;
+            if (nextCell != null) {
+                double vertexHeight = nextCell.getGeometry().getHeight();
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, assignNode.getNext());
+            }
         }
         else if (node instanceof BinaryNode) {
-            constructGraph(graph, blockVertex, reversalNodes, x, y, (BinaryNode)node);
+            BinaryNode binaryNode = (BinaryNode)node;
+            Object nextVertex = binaryVertex(graph, blockVertex, reversalNodes, x, y, binaryNode);
+            mxCell nextCell = (mxCell) nextVertex;
+            if (nextCell != null) {
+                double vertexHeight = nextCell.getGeometry().getHeight();
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, binaryNode.getNext());
+            }
         }
         else if (node instanceof BreakNode) {
-            constructGraph(graph, blockVertex, reversalNodes, x, y, (BreakNode)node);
         }
         else if (node instanceof CaseNode) {
-            constructGraph(graph, blockVertex, reversalNodes, x, y, (CaseNode)node);
         }
         else if (node instanceof ContinueNode) {
-            constructGraph(graph, blockVertex, reversalNodes, x, y, (ContinueNode)node);
         }
         else if (node instanceof MethodCallNode) {
-            constructGraph(graph, blockVertex, reversalNodes, x, y, (MethodCallNode)node);
+            MethodCallNode methodCallNode = (MethodCallNode)node;
+            Object nextVertex = methodCallVertex(graph, blockVertex, reversalNodes, x, y, methodCallNode);
+            mxCell nextCell = (mxCell) nextVertex;
+            if (nextCell != null) {
+                double vertexHeight = nextCell.getGeometry().getHeight();
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, methodCallNode.getNext());
+            }
         }
         else if (node instanceof ReturnNode) {
-            constructGraph(graph, blockVertex, reversalNodes, x, y, (ReturnNode)node);
+            ReturnNode returnNode = (ReturnNode)node;
+            Object nextVertex = returnVertex(graph, blockVertex, reversalNodes, x, y, returnNode);
+            mxCell nextCell = (mxCell) nextVertex;
+            if (nextCell != null) {
+                double vertexHeight = nextCell.getGeometry().getHeight();
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, returnNode.getNext());
+            }
         }
         else if (node instanceof SwitchNode) {
-            constructGraph(graph, blockVertex, reversalNodes, x, y, (SwitchNode)node);
         }
         else if (node instanceof TryNode) {
-            constructGraph(graph, blockVertex, reversalNodes, x, y, (TryNode)node);
         }
         else if (node instanceof CatchNode) {
-            constructGraph(graph, blockVertex, reversalNodes, x, y, (CatchNode)node);
         }
         else if (node instanceof UnaryNode) {
-            constructGraph(graph, blockVertex, reversalNodes, x, y, (UnaryNode)node);
-        }
-    }
-
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, StartNode node)
-    {
-        Object nextVertex = vertex(graph, node.toString(), node.getType(), x, y);
-        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
-        mxCell nextCell = (mxCell) nextVertex;
-        if (nextCell != null) {
-            double vertexHeight = nextCell.getGeometry().getHeight();
-            constructGraph(graph, nextVertex, reversalNodes, initialX, initialY + vertexHeight + defaultDistance, node.getNext());
+            UnaryNode unaryNode = (UnaryNode)node;
+            Object nextVertex = unaryVertex(graph, blockVertex, reversalNodes, x, y, unaryNode);
+            mxCell nextCell = (mxCell) nextVertex;
+            if (nextCell != null) {
+                double vertexHeight = nextCell.getGeometry().getHeight();
+                constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, unaryNode.getNext());
+            }
         }
     }
 
@@ -169,154 +217,112 @@ public class JaviBlockSchemeView extends JPanel
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleLeftLeft));
     }
 
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ForNode node)
+    private Object forVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ForNode node)
     {
         Object nextVertex = vertex(graph, node.getCondition(), node.getType(), x, y);
-        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
-
+        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleLeftLeft));
         reversalNodes.push(new ReverseBlock(nextVertex, node, 1));
-        mxCell nextCell = (mxCell) nextVertex;
-        if (nextCell != null) {
-            double vertexHeight = nextCell.getGeometry().getHeight();
-            constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, node.getNestedFirst());
-        }
+
+        return nextVertex;
     }
 
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ForEachNode node)
+    private Object foreachVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ForEachNode node)
     {
         Object nextVertex = vertex(graph, node.getCondition(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
-
         reversalNodes.push(new ReverseBlock(nextVertex, node, 1));
-        mxCell nextCell = (mxCell) nextVertex;
-        if (nextCell != null) {
-            double vertexHeight = nextCell.getGeometry().getHeight();
-            constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, node.getNestedFirst());
-        }
+
+        return nextVertex;
     }
 
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, IfNode node)
+    private Object ifVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, IfNode node)
     {
         Object nextVertex = vertex(graph, node.getCondition(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
-
         reversalNodes.push(new ReverseBlock(nextVertex, node, (node.getNo() != null ? 2 : 1)));
-        mxCell nextCell = (mxCell) nextVertex;
-        if (nextCell != null) {
-            double vertexWidth = nextCell.getGeometry().getWidth();
-            double vertexHeight = nextCell.getGeometry().getHeight();
-            constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, node.getYes());
-            constructGraph(graph, nextVertex, reversalNodes, x + vertexWidth + defaultDistance, y, node.getNo());
-        }
+
+        return nextVertex;
     }
 
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, WhileNode node)
+    private Object whileVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, WhileNode node)
     {
         Object nextVertex = vertex(graph, node.getCondition(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
-
         reversalNodes.push(new ReverseBlock(nextVertex, node, 1));
-        mxCell nextCell = (mxCell) nextVertex;
-        if (nextCell != null) {
-            double vertexHeight = nextCell.getGeometry().getHeight();
-            constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, node.getNestedFirst());
-        }
+
+        return nextVertex;
     }
 
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, DeclarationNode node)
+    private Object declarationVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, DeclarationNode node)
+    {
+        Object nextVertex = vertex(graph, node.getExp(), node.getType(), x, y);
+        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleLeftLeft));
+        return nextVertex;
+    }
+
+    private Object assignVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, AssignNode node)
+    {
+        Object nextVertex = vertex(graph, node.getExp(), node.getType(), x, y);
+        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleLeftLeft));
+        return nextVertex;
+    }
+
+    private Object binaryVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, BinaryNode node)
     {
         Object nextVertex = vertex(graph, node.getExp(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
-        mxCell nextCell = (mxCell) nextVertex;
-        if (nextCell != null) {
-            double vertexHeight = nextCell.getGeometry().getHeight();
-            constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, node.getNext());
-        }
+        return nextVertex;
     }
 
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, AssignNode node)
+    private Object breakVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, BreakNode node)
     {
-        Object nextVertex = vertex(graph, node.getExp(), node.getType(), x, y);
-        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
-        mxCell nextCell = (mxCell) nextVertex;
-        if (nextCell != null) {
-            double vertexHeight = nextCell.getGeometry().getHeight();
-            constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, node.getNext());
-        }
+        return null;
     }
 
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, BinaryNode node)
+    private Object caseVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, CaseNode node)
     {
-        Object nextVertex = vertex(graph, node.getExp(), node.getType(), x, y);
-        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
-        mxCell nextCell = (mxCell) nextVertex;
-        if (nextCell != null) {
-            double vertexHeight = nextCell.getGeometry().getHeight();
-            constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, node.getNext());
-        }
+        return null;
     }
 
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, BreakNode node)
+    private Object continueVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ContinueNode node)
     {
-
+        return null;
     }
 
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, CaseNode node)
-    {
-
-    }
-
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ContinueNode node)
-    {
-
-    }
-
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, MethodCallNode node)
+    private Object methodCallVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, MethodCallNode node)
     {
         Object nextVertex = vertex(graph, node.getMethod(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
-        mxCell nextCell = (mxCell) nextVertex;
-        if (nextCell != null) {
-            double vertexHeight = nextCell.getGeometry().getHeight();
-            constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, node.getNext());
-        }
+        return nextVertex;
     }
 
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ReturnNode node)
+    private Object returnVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ReturnNode node)
     {
         Object nextVertex = vertex(graph, node.getExpression(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
-        mxCell nextCell = (mxCell) nextVertex;
-        if (nextCell != null) {
-            double vertexHeight = nextCell.getGeometry().getHeight();
-            constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, node.getNext());
-        }
+        return nextVertex;
     }
 
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, SwitchNode node)
+    private Object switchVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, SwitchNode node)
     {
-
+        return null;
     }
 
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, TryNode node)
+    private Object tryVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, TryNode node)
     {
-
+        return null;
     }
 
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, CatchNode node)
+    private Object catchVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, CatchNode node)
     {
-
+        return null;
     }
 
-    private void constructGraph(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, UnaryNode node)
+    private Object unaryVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, UnaryNode node)
     {
         Object nextVertex = vertex(graph, node.getExp(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop));
-        mxCell nextCell = (mxCell) nextVertex;
-        if (nextCell != null) {
-            double vertexHeight = nextCell.getGeometry().getHeight();
-            constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, node.getNext());
-        }
+        return nextVertex;
     }
 
     private Object vertex(mxGraph graph, String blockContent, NodeType type, double x, double y)
