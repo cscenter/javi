@@ -1,39 +1,36 @@
-package model;
+﻿package model;
 
-import com.github.antlrjavaparser.api.stmt.SwitchEntryStmt;
+import com.github.antlrjavaparser.api.stmt.CatchClause;
 
-public class CaseNode extends Node {
+public class CatchNode extends Node {
     private Node nestedFirst;
-    private String strCase;
-    public CaseNode(SwitchEntryStmt node) {
-        super(node);
-        if (node.getLabel() != null) {
-            strCase = ("case " + node.getLabel().toString() + ": \n");
-        } else {
-            strCase = ("default: \n");
-        }
-    }
+    private String except;
 
-    @Override
-    public NodeType getType() {
-        return NodeType.CASE;
+    public CatchNode(CatchClause node) {
+        super(node);
+        this.except = node.getExcept().toString();
     }
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
+        Node tmp = nestedFirst;
 
         for (int i = 0; i < level; ++i)
             builder.append("--");
-        builder.append(strCase);
 
-        Node tmp = nestedFirst;
+        builder.append("} catch (").append(except).append(") {\n");
         while (tmp != null) {
             builder.append(tmp.toString());
             tmp = tmp.next;
         }
 
         return builder.toString();
+    }
+
+    @Override
+    public NodeType getType() {
+        return NodeType.CATCH;
     }
 
     @Override

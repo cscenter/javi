@@ -34,6 +34,7 @@ public class LabelIf {
                     }
                 }
             }
+            int j = 9;
         }
     }
 }
