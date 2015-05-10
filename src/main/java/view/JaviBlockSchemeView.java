@@ -214,6 +214,12 @@ public class JaviBlockSchemeView extends JPanel
         }
         else if (node instanceof CatchNode) {
         }
+        else if (node instanceof ThrowNode) {
+        }
+        else if (node instanceof LabelNode) {
+        }
+        else if (node instanceof FinallyNode) {
+        }
         else if (node instanceof UnaryNode) {
             UnaryNode unaryNode = (UnaryNode)node;
             Object nextVertex = unaryVertex(graph, blockVertex, reversalNodes, x, y, unaryNode, edgeStyle);
@@ -291,17 +297,17 @@ public class JaviBlockSchemeView extends JPanel
         return nextVertex;
     }
 
-    private Object breakVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, BreakNode node)
+    private Object breakVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, BreakNode node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
         return null;
     }
 
-    private Object caseVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, CaseNode node)
+    private Object caseVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, CaseNode node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
         return null;
     }
 
-    private Object continueVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ContinueNode node)
+    private Object continueVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ContinueNode node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
         return null;
     }
@@ -320,17 +326,35 @@ public class JaviBlockSchemeView extends JPanel
         return nextVertex;
     }
 
-    private Object switchVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, SwitchNode node)
+    private Object switchVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, SwitchNode node, JaviBlockSchemeEdgeStyle edgeStyle)
+    {
+        Object nextVertex = vertex(graph, node.getSelector(), node.getType(), x, y);
+        graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(edgeStyle));
+        reversalNodes.push(new ReverseBlock(nextVertex, node, node.getEntries().size(), false));
+        return nextVertex;
+    }
+
+    private Object tryVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, TryNode node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
         return null;
     }
 
-    private Object tryVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, TryNode node)
+    private Object catchVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, CatchNode node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
         return null;
     }
 
-    private Object catchVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, CatchNode node)
+    private Object throwVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, ThrowNode node, JaviBlockSchemeEdgeStyle edgeStyle)
+    {
+        return null;
+    }
+
+    private Object labelVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, LabelNode node, JaviBlockSchemeEdgeStyle edgeStyle)
+    {
+        return null;
+    }
+
+    private Object finallyVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, FinallyNode node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
         return null;
     }
@@ -380,20 +404,24 @@ public class JaviBlockSchemeView extends JPanel
         Map<String, Object> vertexEllipse = defaultVertexStyle();
         vertexEllipse.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_ELLIPSE);
 
+        Map<String, Object> vertexHexagon = defaultVertexStyle();
+        vertexEllipse.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_HEXAGON);
+
         graph.getStylesheet().putCellStyle("rhombus", vertexRhombus);
         graph.getStylesheet().putCellStyle("rect", vertexRect);
         graph.getStylesheet().putCellStyle("ellipse", vertexEllipse);
+        graph.getStylesheet().putCellStyle("hexagon", vertexHexagon);
 
         blockShapes = new HashMap<>();
 
         blockShapes.put(NodeType.START, "ellipse");
         blockShapes.put(NodeType.END, "ellipse");
-        blockShapes.put(NodeType.FOR, "rhombus");
-        blockShapes.put(NodeType.FOREACH, "rhombus");
+        blockShapes.put(NodeType.FOR, "hexagon");
+        blockShapes.put(NodeType.FOREACH, "hexagon");
         blockShapes.put(NodeType.IF, "rhombus");
-        blockShapes.put(NodeType.WHILE, "rhombus");
+        blockShapes.put(NodeType.WHILE, "hexagon");
 
-        blockShapes.put(NodeType.DOWHILE, "rhombus");
+        blockShapes.put(NodeType.DOWHILE, "hexagon");
         blockShapes.put(NodeType.DECLARATION, "rect");
         blockShapes.put(NodeType.ASSIGN, "rect");
         blockShapes.put(NodeType.METHOD, "rect");
@@ -407,6 +435,9 @@ public class JaviBlockSchemeView extends JPanel
         blockShapes.put(NodeType.CASE, "rhombus");
         blockShapes.put(NodeType.UNARY, "rect");
         blockShapes.put(NodeType.BINARY, "rect");
+        blockShapes.put(NodeType.THROW, "ellipse");
+        blockShapes.put(NodeType.LABEL, "ellipse");
+        blockShapes.put(NodeType.FINALLY, "ellipse");
     }
 
     private Map<String, Object> defaultVertexStyle()

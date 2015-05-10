@@ -44,4 +44,14 @@ public class SwitchNode extends Node {
         node.level = this.level + 1;
         entries.add((CaseNode)node);
     }
+
+    public  String getSelector()
+    {
+        return selector;
+    }
+
+    public ArrayList<CaseNode> getEntries()
+    {
+        return entries;
+    }
 }
