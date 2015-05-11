@@ -4,6 +4,7 @@ import model.*;
 import com.github.antlrjavaparser.JavaParser;
 import com.github.antlrjavaparser.api.CompilationUnit;
 import com.github.antlrjavaparser.api.body.*;
+import view.JaviBlockSchemePictureTest;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -58,9 +59,15 @@ public class JaviMain
 
     public static void main(String[] args) throws Exception {
     	System.out.println("params:" + args.length);
-     	if(args.length >= 1) {
-     		ModelTest.main(args);
-     	}
+        if (args.length == 1 && args[0].startsWith("-")) {
+            String arg = args[0];
+            if (arg.equals("-png")) {
+                JaviBlockSchemePictureTest.saveAll();
+            }
+        }
+        else if (args.length == 2) {
+            JaviBlockSchemePictureTest.saveToPng(args);
+        }
      	else {	
         	javax.swing.SwingUtilities.invokeLater(JaviMain::createAndShowGUI);
         }

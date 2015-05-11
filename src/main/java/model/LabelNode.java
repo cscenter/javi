@@ -49,4 +49,9 @@ public class LabelNode extends Node {
         nestedFirst = node;
         node.level = this.level + 1;
     }
+
+    public Node getNestedFirst()
+    {
+        return nestedFirst;
+    }
 }

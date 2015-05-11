@@ -2,6 +2,8 @@ package view;
 
 import model.Node;
 
+import java.util.ArrayList;
+
 public class ReverseBlock
 {
     private Object blockVertex;
@@ -9,6 +11,7 @@ public class ReverseBlock
     private int blockCount;
     private double blockY;
     private boolean blockNeedReverseLink;
+    private ArrayList<Object> blockToNextVertexes;
 
     ReverseBlock(Object vertex, Node node, int count, boolean needReverseLink)
     {
@@ -17,6 +20,7 @@ public class ReverseBlock
         this.blockCount = count;
         this.blockY = 0;
         this.blockNeedReverseLink = needReverseLink;
+        this.blockToNextVertexes = new ArrayList<>();
     }
 
     Node getNextBlock()
@@ -46,5 +50,14 @@ public class ReverseBlock
     boolean getBlockNeedReverseLink()
     {
         return blockNeedReverseLink;
+    }
+    void addAllToNextVertex(ArrayList<Object> blockVertexes)
+    {
+        blockToNextVertexes.addAll(blockVertexes);
+    }
+
+    ArrayList<Object> getBlockToNextVertexes()
+    {
+        return blockToNextVertexes;
     }
 }
