@@ -1,4 +1,4 @@
-package view;
+﻿package view;
 
 import model.Node;
 
@@ -51,7 +51,6 @@ public class ReverseBlock
     {
         return blockNeedReverseLink;
     }
-
     void addAllToNextVertex(ArrayList<Object> blockVertexes)
     {
         blockToNextVertexes.addAll(blockVertexes);

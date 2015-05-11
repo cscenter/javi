@@ -1,4 +1,4 @@
-package startDialog;
+﻿package startDialog;
 
 import com.mxgraph.util.mxCellRenderer;
 import reader.JaviParser;
