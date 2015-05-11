@@ -99,7 +99,7 @@ public class NewModelTest {
         ModelTest.main(new String[]{matchingFiles[0].getAbsolutePath()});
     }
 
-    @Test
+    /*@Test
     public void testSwitchSimple() throws IOException
     {
         File[] matchingFiles = mSimpleExamplesFolder.listFiles((dir, name) -> {
@@ -107,7 +107,7 @@ public class NewModelTest {
         });
         assertTrue(matchingFiles.length > 0);
         ModelTest.main(new String[]{matchingFiles[0].getAbsolutePath()});
-    }
+    }*/
 
     @Test
     public void testThrowSimple() throws IOException
