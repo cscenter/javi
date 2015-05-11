@@ -2,6 +2,9 @@
 
 import com.github.antlrjavaparser.api.expr.BinaryExpr;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class BinaryNode extends Node {
     private String exp;
     Map<String, String> operators = new HashMap<>();
@@ -20,13 +23,13 @@ public class BinaryNode extends Node {
         operators.put("lShift", "<<");
         operators.put("rSignedShift", ">>");
         operators.put("rUnsignedShift", ">>>");
-        operators.put("plus", ""); //?
-        operators.put("minus", ""); //?
-        operators.put("times", ""); //?
-        operators.put("divide", "");
+        operators.put("plus", "+");
+        operators.put("minus", "-");
+        operators.put("times", "*");
+        operators.put("divide", "/");
         operators.put("remainder", "%");
-        operators.put("binOr", "");
-        operators.put("binAnd", "");
+        operators.put("binOr", "|");
+        operators.put("binAnd", "&");
 
         exp = node.getLeft().toString() + operators.get(node.getOperator()) + node.getRight().toString();
     }

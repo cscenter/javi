@@ -2,28 +2,29 @@ package model;
 
 import com.github.antlrjavaparser.api.expr.UnaryExpr;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class UnaryNode extends Node {
     private String exp;
-    Map<String, String> operators = new HashMap<>();
-
-    public UnaryNode(UnaryExpr node) {
-        super(node);
+    static Map<String, String> operators = new HashMap<String, String>();
+    static {
         operators.put("preIncrement", "++");
         operators.put("posIncrement", "++");
         operators.put("preDecrement", "--");
         operators.put("posDecrement", "--");
-        operators.put("positive", "+"); //?
-        operators.put("negative", "-"); //?
-        operators.put("not", "~"); //?
-        operators.put("inverse", ""); //?
+        operators.put("positive", "+");
+        operators.put("negative", "-");
+        operators.put("not", "!");
+        operators.put("inverse", "~");
+    }
 
-        if (node.getOperator().toString() == "preIncrement" || node.getOperator().toString() == "preDecrement") {
-            this.exp = operators.get(node.getOperator()) + node.getExpr().toString();
-//        } else if (node.getOperator().toString() == "posIncrement" || node.getOperator().toString() == "posDecrement") {
-//            this.exp = node.getExpr().toString() + operators.get(node.getOperator());
-//        }
-        } else {
+    public UnaryNode(UnaryExpr node) {
+        super(node);
+        if (node.getOperator().toString() == "posIncrement" || node.getOperator().toString() == "posDecrement") {
             this.exp = node.getExpr().toString() + operators.get(node.getOperator());
+        } else {
+            this.exp = operators.get(node.getOperator()) + node.getExpr().toString();
         }
     }
 

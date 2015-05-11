@@ -4,6 +4,7 @@ import com.github.antlrjavaparser.api.expr.AssignExpr;
 
 import java.lang.String;
 import java.util.HashMap;
+import java.util.Map;
 
 public class AssignNode extends Node {
     private String exp;
@@ -14,7 +15,7 @@ public class AssignNode extends Node {
         operators.put("assign", "=");
         operators.put("plus", "+=");
         operators.put("minus", "-=");
-        operators.put("slash", "\=");
+        operators.put("slash", "\\=");
         operators.put("star", "*=");
         operators.put("or", "||=");
         operators.put("and", "&=");
