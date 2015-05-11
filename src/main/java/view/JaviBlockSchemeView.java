@@ -209,6 +209,18 @@ public class JaviBlockSchemeView extends JPanel
             }
         }
         else if (node instanceof SwitchNode) {
+            SwitchNode switchNode = (SwitchNode)node;
+            Object nextVertex = switchVertex(graph, blockVertex, reversalNodes, x, y, switchNode, edgeStyle);
+            mxCell nextCell = (mxCell) nextVertex;
+            if (nextCell != null) {
+                double vertexWidth = nextCell.getGeometry().getWidth();
+                double vertexHeight = nextCell.getGeometry().getHeight();
+                ArrayList<CaseNode> caseNodes = switchNode.getEntries();
+
+                for (CaseNode caseNode : caseNodes) {
+                    constructGraph(graph, nextVertex, reversalNodes, x, y + vertexHeight + defaultDistance, switchNode, JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop);
+                }
+            }
         }
         else if (node instanceof TryNode) {
         }
@@ -328,10 +340,11 @@ public class JaviBlockSchemeView extends JPanel
 
     private Object switchVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, SwitchNode node, JaviBlockSchemeEdgeStyle edgeStyle)
     {
-        Object nextVertex = vertex(graph, node.getSelector(), node.getType(), x, y);
+/*        Object nextVertex = vertex(graph, node.getSelector(), node.getType(), x, y);
         graph.insertEdge(graph.getDefaultParent(), null, "", blockVertex, nextVertex, edgeShapes.get(edgeStyle));
         reversalNodes.push(new ReverseBlock(nextVertex, node, node.getEntries().size(), false));
-        return nextVertex;
+        return nextVertex;*/
+        return null;
     }
 
     private Object tryVertex(mxGraph graph, Object blockVertex, Stack<ReverseBlock>reversalNodes, double x, double y, TryNode node, JaviBlockSchemeEdgeStyle edgeStyle)
@@ -405,7 +418,7 @@ public class JaviBlockSchemeView extends JPanel
         vertexEllipse.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_ELLIPSE);
 
         Map<String, Object> vertexHexagon = defaultVertexStyle();
-        vertexEllipse.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_HEXAGON);
+        vertexHexagon.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_HEXAGON);
 
         graph.getStylesheet().putCellStyle("rhombus", vertexRhombus);
         graph.getStylesheet().putCellStyle("rect", vertexRect);
