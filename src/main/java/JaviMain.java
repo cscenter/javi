@@ -1,4 +1,4 @@
-﻿import startDialog.JaviFrame;
+import startDialog.JaviFrame;
 import model.*;
 
 import com.github.antlrjavaparser.JavaParser;

@@ -1,4 +1,4 @@
-﻿package view;
+package view;
 
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;

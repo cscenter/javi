@@ -1,4 +1,4 @@
-﻿package model;
+package model;
 
 import com.github.antlrjavaparser.JavaParser;
 import com.github.antlrjavaparser.api.CompilationUnit;

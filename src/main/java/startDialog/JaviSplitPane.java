@@ -1,4 +1,4 @@
-﻿package startDialog;
+package startDialog;
 
 import reader.JaviParser;
 

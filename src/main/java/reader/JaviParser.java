@@ -1,4 +1,4 @@
-﻿package reader;
+package reader;
 
 import com.github.antlrjavaparser.JavaParser;
 import com.github.antlrjavaparser.api.CompilationUnit;

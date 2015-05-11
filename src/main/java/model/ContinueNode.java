@@ -1,4 +1,4 @@
-﻿package model;
+package model;
 
 import com.github.antlrjavaparser.api.stmt.ContinueStmt;
 

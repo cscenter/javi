@@ -1,4 +1,4 @@
-﻿package model;
+package model;
 
 // Block scheme consists of one lonely node.
 public class BlockScheme {

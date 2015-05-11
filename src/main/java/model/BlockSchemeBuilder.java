@@ -1,4 +1,4 @@
-﻿package model;
+package model;
 
 import com.github.antlrjavaparser.api.Comment;
 import com.github.antlrjavaparser.api.body.CatchParameter;
