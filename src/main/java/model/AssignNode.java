@@ -8,10 +8,8 @@ import java.util.Map;
 
 public class AssignNode extends Node {
     private String exp;
-    Map<String, String> operators = new HashMap<>();
-
-    public AssignNode(AssignExpr node) {
-        super(node.getTarget());
+    static Map<String, String> operators = new HashMap<String, String>();
+    static {
         operators.put("assign", "=");
         operators.put("plus", "+=");
         operators.put("minus", "-=");
@@ -24,7 +22,10 @@ public class AssignNode extends Node {
         operators.put("lShift", "<<=");
         operators.put("rSignedShift", ">>=");
         operators.put("rUnsignedShift", ">>>=");
+    }
 
+    public AssignNode(AssignExpr node) {
+        super(node.getTarget());
         this.exp = node.getTarget().toString() + " " + operators.get(node.getOperator())
                 + " " + node.getValue().toString();
     }
