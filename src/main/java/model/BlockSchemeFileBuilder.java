@@ -3,7 +3,6 @@ package model;
 import com.github.antlrjavaparser.JavaParser;
 import com.github.antlrjavaparser.api.CompilationUnit;
 import com.github.antlrjavaparser.api.body.BodyDeclaration;
-import com.github.antlrjavaparser.api.body.ClassOrInterfaceDeclaration;
 import com.github.antlrjavaparser.api.body.MethodDeclaration;
 import com.github.antlrjavaparser.api.body.TypeDeclaration;
 import com.github.antlrjavaparser.api.stmt.BlockStmt;
@@ -12,10 +11,13 @@ import com.github.antlrjavaparser.api.stmt.TypeDeclarationStmt;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class BlockSchemeFileBuilder {
-    Map<String, ArrayList<BlockScheme>> bs = new HashMap<>();
+    private Map<String, ArrayList<BlockScheme>> bs = new HashMap<>();
 
     public Map<String, ArrayList<BlockScheme>> getBlockScheme() {
         return bs;
@@ -48,6 +50,7 @@ public class BlockSchemeFileBuilder {
 
                 for (MethodDeclaration method : methods) {
                     BlockScheme blockScheme = new BlockScheme();
+                    blockScheme.setNameMethod(method.getName());
                     BlockSchemeBuilder visitor = new BlockSchemeBuilder(blockScheme);
                     method.accept(visitor, null);
                     visitor.finish();
@@ -79,21 +82,5 @@ public class BlockSchemeFileBuilder {
                 }
             }
         }
-    }
-
-    public static void main(String[] args) throws IOException {
-        BlockSchemeFileBuilder builder = new BlockSchemeFileBuilder("C:/Users/Koshechka/IdeaProjects/javi/examples/Class3.java");
-        Map<String, ArrayList<BlockScheme>> bs = builder.getBlockScheme();
-        for (String key : bs.keySet()) {
-            System.out.println(key + " : " + bs.get(key).size());
-        }
-
-//        File file = new File("C:/Users/Koshechka/IdeaProjects/javi/examples/Class4.java");
-//        CompilationUnit parse = JavaParser.parse(file);
-//        List<TypeDeclaration> types = parse.getTypes();
-//        List<BodyDeclaration> members = types.get(0).getMembers();
-//        for (BodyDeclaration bd : members) {
-//            System.out.println(bd);
-//        }
     }
 }

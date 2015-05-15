@@ -2,7 +2,7 @@ package model;
 
 // Block scheme consists of one lonely node.
 public class BlockScheme {
-    //private com.github.antlrjavaparser.api.Node node;
+    private String nameMethod;
     private StartNode start = new StartNode();
 
     public StartNode getStart() {
@@ -19,5 +19,13 @@ public class BlockScheme {
             tmp = tmp.next;
         }
         return sb.toString();
+    }
+
+    public String getNameMethod() {
+        return nameMethod;
+    }
+
+    public void setNameMethod(String nameMethod) {
+        this.nameMethod = nameMethod;
     }
 }

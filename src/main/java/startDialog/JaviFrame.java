@@ -1,12 +1,20 @@
 package startDialog;
 
 import com.mxgraph.util.mxCellRenderer;
-import reader.JaviParser;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
@@ -61,9 +69,8 @@ public class JaviFrame extends JFrame {
                 int returnVal = openFile.showOpenDialog(null);
                 if (returnVal == JFileChooser.APPROVE_OPTION) {
                     File file = openFile.getSelectedFile();
-                    JaviParser parser = new JaviParser(file);
-                    mJaviSplitPane.setListData(parser);
-                    if (parser.methodNames().length > 0) {
+                    mJaviSplitPane.setFileToParse(file.getAbsolutePath());
+                    if (mJaviSplitPane.methodsCount() > 0) {
                         saveToPngButton.setEnabled(true);
                     } else {
                         saveToPngButton.setEnabled(false);
