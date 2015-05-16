@@ -38,7 +38,7 @@ import java.util.Stack;
 public class BlockSchemeBuilder extends VoidVisitorAdapter {
     private BlockScheme scheme;
     private Stack<Node> innerNodes = new Stack<>();
-    private Stack<Node> loopStack = new Stack<>();
+    private Stack<Node> breakableStack = new Stack<>();
     private Node currentNode;
     private boolean processingElseBranch = false;
     private ArrayList<ReturnNode> returnNodes = new ArrayList<>();
@@ -68,10 +68,11 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
         return false;
     }
 
-    private boolean isLoop(Node node) {
+    private boolean isBreakable(Node node) {
         return node.getType() == NodeType.FOR
                 || node.getType() == NodeType.FOREACH
-                || node.getType() == NodeType.WHILE;
+                || node.getType() == NodeType.WHILE
+                || node.getType() == NodeType.SWITCH;
     }
 
     //EL: лучше сделать более короткие имена типов
@@ -86,13 +87,13 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
         assert !innerNodes.empty();
 
         Node node = createMyNodeFromAntlrNode(antlrNode);
-        if (isLoop(node)) {
-            loopStack.push(node);
+        if (isBreakable(node)) {
+            breakableStack.push(node);
         }
-        if (!loopStack.empty()) {
-            while (!loopStack.peek().contains(node)) {
-                loopStack.pop();
-                if (loopStack.empty()) {
+        if (!breakableStack.empty()) {
+            while (!breakableStack.peek().contains(node)) {
+                breakableStack.pop();
+                if (breakableStack.empty()) {
                     break;
                 }
             }
@@ -128,7 +129,7 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
             if (node.getType() == NodeType.CONTINUE) {
                 ContinueNode continueNode = (ContinueNode) node;
                 if (continueNode.getLabel() == null) {
-                    node.setNext(loopStack.peek());
+                    node.setNext(breakableStack.peek());
                 } else {
                     node.setNext(labels.get(continueNode.getLabel()));
                 }
@@ -136,7 +137,7 @@ public class BlockSchemeBuilder extends VoidVisitorAdapter {
             if (node.getType() == NodeType.BREAK) {
                 BreakNode breakNode = (BreakNode) node;
                 if (breakNode.getLabel() == null) {
-                    breaks.put(breakNode, loopStack.peek());
+                    breaks.put(breakNode, breakableStack.peek());
                 } else {
                     breaks.put(breakNode, labels.get(breakNode.getLabel()));
                 }

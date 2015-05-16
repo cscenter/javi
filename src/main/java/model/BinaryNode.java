@@ -7,10 +7,8 @@ import java.util.Map;
 
 public class BinaryNode extends Node {
     private String exp;
-    Map<String, String> operators = new HashMap<>();
-
-    public BinaryNode(BinaryExpr node) {
-        super(node);
+    static Map<String, String> operators = new HashMap<String, String>();
+    static {
         operators.put("equals", "==");
         operators.put("greater", ">");
         operators.put("less", "<");
@@ -30,7 +28,10 @@ public class BinaryNode extends Node {
         operators.put("remainder", "%");
         operators.put("binOr", "|");
         operators.put("binAnd", "&");
+    }
 
+    public BinaryNode(BinaryExpr node) {
+        super(node);
         exp = node.getLeft().toString() + operators.get(node.getOperator()) + node.getRight().toString();
     }
 
