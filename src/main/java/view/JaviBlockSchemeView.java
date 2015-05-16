@@ -10,9 +10,10 @@ import model.*;
 
 import javax.swing.*;
 import java.util.*;
-
+//EL: check java code convention, at least {}
 public class JaviBlockSchemeView extends JPanel
 {
+    //EL: enum ---> CAPITAL
     private enum JaviBlockSchemeEdgeStyle
     {
         JaviBlockSchemeEdgeStyleLeftLeft,
@@ -33,6 +34,7 @@ public class JaviBlockSchemeView extends JPanel
     private HashMap<String, Object> labelVertexes;
     private HashMap<Node, Integer> nodeWeights;
 
+    //EL: final and CAPITAL
     private static double initialX = 10.0;
     private static double initialY = 10.0;
     private static double defaultDistance = 60.0;
@@ -217,7 +219,8 @@ public class JaviBlockSchemeView extends JPanel
         nodeWeights.put(node, Math.max(nodeWeights.get(nestedNode), nodeWeights.get(nextNode)));
     }
 
-
+//EL: try to reduce similar blocks
+//EL: shorten constructGraph call
     private void constructGraph(mxGraph graph, ArrayList<Object> blockVertexes, Stack<ReverseBlock>reversalNodes, double x, double y, Node node, JaviBlockSchemeEdgeStyle edgeStyle, String edgeLabel)
     {
         if (node == null) {
@@ -446,6 +449,7 @@ public class JaviBlockSchemeView extends JPanel
         }
     }
 
+    //EL: remove redundat XXXVertex methods
     private void endVertex(mxGraph graph, ArrayList<Object> blockVertexes, Stack<ReverseBlock>reversalNodes, double x, double y, EndNode node, JaviBlockSchemeEdgeStyle edgeStyle, String edgeLabel)
     {
         Object nextVertex = vertex(graph, node.toString(), node.getType(), x, y);
