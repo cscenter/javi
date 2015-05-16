@@ -39,4 +39,14 @@ public class CatchNode extends Node {
         nestedFirst = node;
         node.level = this.level + 1;
     }
+
+    public Node getNestedFirst()
+    {
+        return nestedFirst;
+    }
+
+    public String getExcept()
+    {
+        return except;
+    }
 }

@@ -23,11 +23,13 @@ public class JaviBlockSchemePictureTest
 
     public static void saveAll()
     {
-        ArrayList<File> javaExampleFiles = javaFiles("examples");
+        ArrayList<File> javaExampleFiles = javaFiles("examples/SimpleTest");
         for (File javaFile : javaExampleFiles) {
             JaviParser parser = new JaviParser(javaFile);
-            for (String className: parser.methodNames()) {
-                saveToPngByClassName(parser, javaFile, className);
+            if (!javaFile.getName().equals("SwitchSimpleTest.java")) {
+                for (String className : parser.methodNames()) {
+                    saveToPngByClassName(parser, javaFile, className);
+                }
             }
         }
     }

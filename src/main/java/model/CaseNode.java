@@ -42,4 +42,9 @@ public class CaseNode extends Node {
         nestedFirst = node;
         node.level = this.level + 1;
     }
+
+    public String getStrCase()
+    {
+        return strCase;
+    }
 }

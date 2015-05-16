@@ -31,6 +31,7 @@ public class JaviBlockSchemeView extends JPanel
     private Object commonEndVertex;
     private ArrayList<Object> toEndVertex;
     private HashMap<String, Object> labelVertexes;
+    private HashMap<Node, Integer> nodeWeights;
 
     private static double initialX = 10.0;
     private static double initialY = 10.0;
@@ -63,6 +64,8 @@ public class JaviBlockSchemeView extends JPanel
         try
         {
             StartNode startNode = scheme.getStart();
+            nodeWeights = new HashMap<>();
+            constructWeights(startNode);
             Stack<ReverseBlock> reversalNodes = new Stack<>();
             Object startVertex = vertex(graph, startNode.toString(), startNode.getType(), initialX, initialY);
             mxCell startCell = (mxCell) startVertex;
@@ -84,6 +87,136 @@ public class JaviBlockSchemeView extends JPanel
     {
         return graph;
     }
+
+    private void constructWeights(Node node)
+    {
+        if (node == null) {
+            return;
+        }
+        if (node instanceof EndNode
+                || node instanceof BreakNode
+                || node instanceof ContinueNode
+                || node instanceof ReturnNode) {
+            nodeWeights.put(node, 1);
+        }
+        else if (node instanceof ForNode) {
+            ForNode forNode = (ForNode)node;
+            Node nextNode = forNode.getNext();
+            Node nestedNode = forNode.getNestedFirst();
+            constructWeights(nestedNode);
+            constructWeights(nextNode);
+            putLoopWeight(node, nextNode, nestedNode);
+        }
+        else if (node instanceof ForEachNode) {
+            ForEachNode forEachNode = (ForEachNode)node;
+            Node nextNode = forEachNode.getNext();
+            Node nestedNode = forEachNode.getNestedFirst();
+            constructWeights(nestedNode);
+            constructWeights(nextNode);
+            putLoopWeight(node, nextNode, nestedNode);
+        }
+        else if (node instanceof IfNode) {
+            IfNode ifNode = (IfNode)node;
+            Node nextNode = ifNode.getNext();
+            Node yesNode = ifNode.getYes();
+            Node noNode = ifNode.getNo();
+            constructWeights(nextNode);
+            constructWeights(yesNode);
+            constructWeights(noNode);
+
+            int nextW = nextNode == null ? 1 : nodeWeights.get(nextNode);
+            int ynW = (yesNode != null ? (noNode != null ? nodeWeights.get(yesNode) + nodeWeights.get(noNode) : nodeWeights.get(yesNode)) : (noNode != null ? nodeWeights.get(noNode) : 1));
+            int w = Math.max(nextW, ynW);
+            nodeWeights.put(node, w);
+        }
+        else if (node instanceof WhileNode) {
+            WhileNode whileNode = (WhileNode)node;
+            Node nextNode = whileNode.getNext();
+            Node nestedNode = whileNode.getNestedFirst();
+            constructWeights(nestedNode);
+            constructWeights(nextNode);
+            putLoopWeight(node, nextNode, nestedNode);
+        }
+        else if (node instanceof DeclarationNode
+                || node instanceof AssignNode
+                || node instanceof BinaryNode
+                || node instanceof MethodCallNode
+                || node instanceof UnaryNode
+                || node instanceof CaseNode
+                || node instanceof StartNode) {
+            if (node.getNext() == null) {
+                nodeWeights.put(node, 1);
+            }
+            else {
+                constructWeights(node.getNext());
+                nodeWeights.put(node, nodeWeights.get(node.getNext()));
+            }
+        }
+
+        else if (node instanceof SwitchNode) {
+            int switchWeight = 0;
+            for (CaseNode caseNode : ((SwitchNode) node).getEntries()) {
+                constructWeights(caseNode);
+                switchWeight += nodeWeights.get(caseNode);
+            }
+            constructWeights(node.getNext());
+
+            nodeWeights.put(node, node.getNext() != null ? Math.max(switchWeight, nodeWeights.get(node.getNext())) : switchWeight);
+        }
+        else if (node instanceof TryNode) {
+            TryNode tryNode = (TryNode)node;
+            constructWeights(tryNode.getNestedFirst());
+            int cw = 0;
+            for (CatchNode catchNode : tryNode.getCatchClause())
+            {
+                constructWeights(catchNode);
+                cw += nodeWeights.get(catchNode);
+            }
+            constructWeights(tryNode.getFinallyBlock());
+            int nwfw = (tryNode.getNestedFirst() != null ? nodeWeights.get(tryNode.getNestedFirst()) : 0) + (tryNode.getFinallyBlock() != null ? nodeWeights.get(tryNode.getFinallyBlock()) : 0);
+            nodeWeights.put(tryNode, Math.max(1, cw + nwfw));
+        }
+        else if (node instanceof CatchNode) {
+            CatchNode catchNode = (CatchNode) node;
+            constructWeights(catchNode.getNestedFirst());
+            nodeWeights.put(catchNode, catchNode.getNestedFirst() != null ? nodeWeights.get(catchNode.getNestedFirst()) : 1);
+        }
+        else if (node instanceof ThrowNode) {
+
+        }
+        else if (node instanceof LabelNode) {
+        }
+        else if (node instanceof FinallyNode) {
+            FinallyNode finallyNode = (FinallyNode) node;
+            constructWeights(finallyNode.getNestedFirst());
+            nodeWeights.put(finallyNode, finallyNode.getNestedFirst() != null ? nodeWeights.get(finallyNode.getNestedFirst()) : 1);
+        }
+
+        if (node.getNext() != null) {
+            nodeWeights.put(node.getNext(), nodeWeights.get(node));
+        }
+    }
+
+    private void putLoopWeight(Node node, Node nextNode, Node nestedNode)
+    {
+        if (nextNode == null && nestedNode == null) {
+            nodeWeights.put(node, 1);
+            return;
+        }
+
+        if (nextNode == null) {
+            nodeWeights.put(node, nodeWeights.get(nestedNode));
+            return;
+        }
+
+        if (nestedNode == null) {
+            nodeWeights.put(node, nodeWeights.get(nextNode));
+            return;
+        }
+
+        nodeWeights.put(node, Math.max(nodeWeights.get(nestedNode), nodeWeights.get(nextNode)));
+    }
+
 
     private void constructGraph(mxGraph graph, ArrayList<Object> blockVertexes, Stack<ReverseBlock>reversalNodes, double x, double y, Node node, JaviBlockSchemeEdgeStyle edgeStyle, String edgeLabel)
     {
@@ -153,7 +286,7 @@ public class JaviBlockSchemeView extends JPanel
                 double vertexHeight = nextCell.getGeometry().getHeight();
                 constructGraph(graph, new ArrayList<>(Arrays.asList(nextVertex)), reversalNodes, x, y + vertexHeight + defaultDistance, ifNode.getYes(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop, "TRUE");
                 if (ifNode.getNo() != null) {
-                    constructGraph(graph, new ArrayList<>(Arrays.asList(nextVertex)), reversalNodes, x + vertexWidth + defaultDistance, y + vertexHeight + defaultDistance, ifNode.getNo(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleRightTop, "FALSE");
+                    constructGraph(graph, new ArrayList<>(Arrays.asList(nextVertex)), reversalNodes, x + (ifNode.getYes() != null ? (vertexWidth + defaultDistance) * nodeWeights.get(ifNode.getYes()) : 0), y + vertexHeight + defaultDistance, ifNode.getNo(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleRightTop, "FALSE");
                 }
             }
         }
@@ -249,10 +382,39 @@ public class JaviBlockSchemeView extends JPanel
             }
         }
         else if (node instanceof TryNode) {
+            TryNode tryNode = (TryNode)node;
+            Object nextVertex = tryVertex(graph, blockVertexes, reversalNodes, x, y, tryNode, edgeStyle, edgeLabel);
+            mxCell nextCell = (mxCell) nextVertex;
+            if (nextCell != null) {
+                double vertexWidth = nextCell.getGeometry().getWidth();
+                double vertexHeight = nextCell.getGeometry().getHeight();
+                ArrayList<CatchNode> catchNodes = tryNode.getCatchClause();
+
+                double curX = x + vertexWidth + defaultDistance;
+
+                for (CatchNode catchNode : catchNodes) {
+                    constructGraph(graph, new ArrayList<>(Arrays.asList(nextVertex)), reversalNodes, curX, y + vertexHeight + defaultDistance, catchNode, JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleLeftTop, "");
+                    curX += x + vertexWidth + defaultDistance;
+                }
+            }
         }
         else if (node instanceof CatchNode) {
+            CatchNode catchNode = (CatchNode)node;
+            Object nextVertex = catchVertex(graph, blockVertexes, reversalNodes, x, y, catchNode, edgeStyle, edgeLabel);
+            mxCell nextCell = (mxCell) nextVertex;
+            if (nextCell != null) {
+                double vertexHeight = nextCell.getGeometry().getHeight();
+                constructGraph(graph, new ArrayList<>(Arrays.asList(nextVertex)), reversalNodes, x, y + vertexHeight + defaultDistance, catchNode.getNestedFirst(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop, "");
+            }
         }
         else if (node instanceof ThrowNode) {
+            ForNode forNode = (ForNode)node;
+            Object nextVertex = forVertex(graph, blockVertexes, reversalNodes, x, y, forNode, edgeStyle, edgeLabel);
+            mxCell nextCell = (mxCell) nextVertex;
+            if (nextCell != null) {
+                double vertexHeight = nextCell.getGeometry().getHeight();
+                constructGraph(graph, new ArrayList<>(Arrays.asList(nextVertex)), reversalNodes, x, y + vertexHeight + defaultDistance, forNode.getNestedFirst(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop, "");
+            }
         }
         else if (node instanceof LabelNode) {
             LabelNode labelNode = (LabelNode)node;
@@ -265,6 +427,13 @@ public class JaviBlockSchemeView extends JPanel
             }
         }
         else if (node instanceof FinallyNode) {
+            FinallyNode finallyNode = (FinallyNode)node;
+            Object nextVertex = finallyVertex(graph, blockVertexes, reversalNodes, x, y, finallyNode, edgeStyle, edgeLabel);
+            mxCell nextCell = (mxCell) nextVertex;
+            if (nextCell != null) {
+                double vertexHeight = nextCell.getGeometry().getHeight();
+                constructGraph(graph, new ArrayList<>(Arrays.asList(nextVertex)), reversalNodes, x, y + vertexHeight + defaultDistance, finallyNode.getNestedFirst(), JaviBlockSchemeEdgeStyle.JaviBlockSchemeEdgeStyleBottomTop, "");
+            }
         }
         else if (node instanceof UnaryNode) {
             UnaryNode unaryNode = (UnaryNode)node;
@@ -370,7 +539,13 @@ public class JaviBlockSchemeView extends JPanel
 
     private Object caseVertex(mxGraph graph, ArrayList<Object> blockVertexes, Stack<ReverseBlock>reversalNodes, double x, double y, CaseNode node, JaviBlockSchemeEdgeStyle edgeStyle, String edgeLabel)
     {
-        return null;
+        Object nextVertex = vertex(graph, node.getStrCase(), node.getType(), x, y);
+        for (Object blockVertex : blockVertexes) {
+            graph.insertEdge(graph.getDefaultParent(), null, edgeLabel, blockVertex, nextVertex, edgeShapes.get(edgeStyle));
+        }
+        reversalNodes.push(new ReverseBlock(nextVertex, node, 1, false));
+
+        return nextVertex;
     }
 
     private Object continueVertex(mxGraph graph, ArrayList<Object> blockVertexes, Stack<ReverseBlock>reversalNodes, double x, double y, ContinueNode node, JaviBlockSchemeEdgeStyle edgeStyle, String edgeLabel)
@@ -415,12 +590,24 @@ public class JaviBlockSchemeView extends JPanel
 
     private Object tryVertex(mxGraph graph, ArrayList<Object> blockVertexes, Stack<ReverseBlock>reversalNodes, double x, double y, TryNode node, JaviBlockSchemeEdgeStyle edgeStyle, String edgeLabel)
     {
-        return null;
+        Object nextVertex = vertex(graph, "try", node.getType(), x, y);
+        for (Object blockVertex : blockVertexes) {
+            graph.insertEdge(graph.getDefaultParent(), null, edgeLabel, blockVertex, nextVertex, edgeShapes.get(edgeStyle));
+        }
+        reversalNodes.push(new ReverseBlock(nextVertex, node, node.getCatchClause().size() + (node.getCatchClause() != null ? 1 : 0) + (node.getFinallyBlock() != null ? 1 : 0), false));
+
+        return nextVertex;
     }
 
     private Object catchVertex(mxGraph graph, ArrayList<Object> blockVertexes, Stack<ReverseBlock>reversalNodes, double x, double y, CatchNode node, JaviBlockSchemeEdgeStyle edgeStyle, String edgeLabel)
     {
-        return null;
+        Object nextVertex = vertex(graph, node.getExcept(), node.getType(), x, y);
+        for (Object blockVertex : blockVertexes) {
+            graph.insertEdge(graph.getDefaultParent(), null, edgeLabel, blockVertex, nextVertex, edgeShapes.get(edgeStyle));
+        }
+        reversalNodes.push(new ReverseBlock(nextVertex, node, 1, false));
+
+        return nextVertex;
     }
 
     private Object throwVertex(mxGraph graph, ArrayList<Object> blockVertexes, Stack<ReverseBlock>reversalNodes, double x, double y, ThrowNode node, JaviBlockSchemeEdgeStyle edgeStyle, String edgeLabel)
@@ -440,7 +627,13 @@ public class JaviBlockSchemeView extends JPanel
 
     private Object finallyVertex(mxGraph graph, ArrayList<Object> blockVertexes, Stack<ReverseBlock>reversalNodes, double x, double y, FinallyNode node, JaviBlockSchemeEdgeStyle edgeStyle, String edgeLabel)
     {
-        return null;
+        Object nextVertex = vertex(graph, node.getExpFinally(), node.getType(), x, y);
+        for (Object blockVertex : blockVertexes) {
+            graph.insertEdge(graph.getDefaultParent(), null, edgeLabel, blockVertex, nextVertex, edgeShapes.get(edgeStyle));
+        }
+        reversalNodes.push(new ReverseBlock(nextVertex, node, 1, false));
+
+        return nextVertex;
     }
 
     private Object unaryVertex(mxGraph graph, ArrayList<Object> blockVertexes, Stack<ReverseBlock>reversalNodes, double x, double y, UnaryNode node, JaviBlockSchemeEdgeStyle edgeStyle, String edgeLabel)

@@ -69,4 +69,14 @@ public class TryNode extends Node{
             node.level = this.level;
         }
     }
+
+    public ArrayList<CatchNode> getCatchClause()
+    {
+        return catchClause;
+    }
+
+    public Node getNestedFirst()
+    {
+        return nestedFirst;
+    }
 }
