@@ -42,6 +42,7 @@ public class BlockSchemeFileBuilder {
                 List<BodyDeclaration> members = cls.getMembers();
                 List<MethodDeclaration> methods = new ArrayList<>();
 
+                //EL: use new syntax x: members
                 for (int i = 0; i < members.size(); ++i) {
                     if (members.get(i) instanceof MethodDeclaration) {
                         methods.add((MethodDeclaration) members.get(i));
@@ -57,6 +58,7 @@ public class BlockSchemeFileBuilder {
                     bs.get(className).add(blockScheme);
                 }
             }
+        //EL: throw to View and show there    
         } catch (IOException e) {
             e.printStackTrace();
         }
