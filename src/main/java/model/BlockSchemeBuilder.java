@@ -37,7 +37,7 @@ import java.util.Stack;
 
 public class BlockSchemeBuilder extends VoidVisitorAdapter {
     private BlockScheme scheme;
-    private Stack<Node> innerNodes = new Stack<>();
+    private Stack<Node> innerNodes = new Stack<Node>();
     private Stack<Node> breakableStack = new Stack<>();
     private Node currentNode;
     private boolean processingElseBranch = false;

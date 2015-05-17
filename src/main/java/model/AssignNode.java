@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class AssignNode extends Node {
     private String exp;
-    static Map<String, String> operators = new HashMap<String, String>();
+    private static Map<String, String> operators = new HashMap<String, String>();
     static {
         operators.put("assign", "=");
         operators.put("plus", "+=");
@@ -26,7 +26,7 @@ public class AssignNode extends Node {
 
     public AssignNode(AssignExpr node) {
         super(node.getTarget());
-        this.exp = node.getTarget().toString() + " " + operators.get(node.getOperator())
+        this.exp = node.getTarget().toString() + " " + operators.get(node.getOperator().toString())
                 + " " + node.getValue().toString();
     }
 

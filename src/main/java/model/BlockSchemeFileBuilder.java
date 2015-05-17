@@ -42,16 +42,22 @@ public class BlockSchemeFileBuilder {
                 List<BodyDeclaration> members = cls.getMembers();
                 List<MethodDeclaration> methods = new ArrayList<>();
 
-                //EL: use new syntax x: members
-                for (int i = 0; i < members.size(); ++i) {
-                    if (members.get(i) instanceof MethodDeclaration) {
-                        methods.add((MethodDeclaration) members.get(i));
+                for (BodyDeclaration member : members) {
+                    if (member instanceof MethodDeclaration) {
+                        methods.add((MethodDeclaration) member);
                     }
                 }
 
                 for (MethodDeclaration method : methods) {
-                    BlockScheme blockScheme = new BlockScheme();
-                    blockScheme.setNameMethod(method.getName());
+                   BlockScheme blockScheme = new BlockScheme();
+                   String nameMethod = method.getName();
+                   List<com.github.antlrjavaparser.api.body.Parameter> parameters = method.getParameters();
+                   if (parameters != null) {
+                        for (com.github.antlrjavaparser.api.body.Parameter parameter : parameters) {
+                            nameMethod = nameMethod + "_" + parameter.getType().toString();
+                        }
+                   }
+                    blockScheme.setNameMethod(nameMethod);
                     BlockSchemeBuilder visitor = new BlockSchemeBuilder(blockScheme);
                     method.accept(visitor, null);
                     visitor.finish();

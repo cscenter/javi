@@ -7,7 +7,7 @@ import java.util.Map;
 
 public class UnaryNode extends Node {
     private String exp;
-    static Map<String, String> operators = new HashMap<String, String>();
+    private static Map<String, String> operators = new HashMap<String, String>();
     static {
         operators.put("preIncrement", "++");
         operators.put("posIncrement", "++");
@@ -22,9 +22,9 @@ public class UnaryNode extends Node {
     public UnaryNode(UnaryExpr node) {
         super(node);
         if (node.getOperator().toString() == "posIncrement" || node.getOperator().toString() == "posDecrement") {
-            this.exp = node.getExpr().toString() + operators.get(node.getOperator());
+            this.exp = node.getExpr().toString() + operators.get(node.getOperator().toString());
         } else {
-            this.exp = operators.get(node.getOperator()) + node.getExpr().toString();
+            this.exp = operators.get(node.getOperator().toString()) + node.getExpr().toString();
         }
     }
 

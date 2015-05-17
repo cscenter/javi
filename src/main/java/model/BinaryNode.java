@@ -7,7 +7,7 @@ import java.util.Map;
 
 public class BinaryNode extends Node {
     private String exp;
-    static Map<String, String> operators = new HashMap<String, String>();
+    private static Map<String, String> operators = new HashMap<String, String>();
     static {
         operators.put("equals", "==");
         operators.put("greater", ">");
@@ -32,7 +32,7 @@ public class BinaryNode extends Node {
 
     public BinaryNode(BinaryExpr node) {
         super(node);
-        exp = node.getLeft().toString() + operators.get(node.getOperator()) + node.getRight().toString();
+        exp = node.getLeft().toString() + operators.get(node.getOperator().toString()) + node.getRight().toString();
     }
 
     public String getExp()
